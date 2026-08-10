@@ -1,0 +1,17 @@
+{
+  "name": "claude-app-bootstrap",
+  "description": "Single-plugin marketplace hosting the app-bootstrap methodology plugin.",
+  "owner": {
+    "name": "Jason Ou",
+    "url": "https://github.com/jasonou"
+  },
+  "plugins": [
+    {
+      "name": "app-bootstrap",
+      "source": "./",
+      "description": "A five-stage methodology for taking an app from an idea to shipped code: product discovery, wireframes, an adversarial design loop, a phased implementation loop, and end-to-end review.",
+      "category": "workflow",
+      "tags": ["methodology", "design-review", "adversarial-review", "subagents"]
+    }
+  ]
+}
