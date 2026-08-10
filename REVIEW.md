@@ -4,6 +4,254 @@ Rounds stack **newest-first**.
 
 ---
 
+# Round 2 — 2026-08-09 (commit `72d37cc`, over coordinator commits `f99cdd1` + `f106d95`)
+
+Scope: verification of all 18 Round 1 dispositions against the **current text**, adjudication of the three your-call items and the two coordinator reversions, and an attack on the new surfaces (rewritten onboarding steps 1/3, the three-way validate table, the Updating/stability subsection, the trigger-shaped descriptions).
+
+Everything below was tested against Claude Code **2.1.226** on a throwaway copy of the repo and an isolated `CLAUDE_CONFIG_DIR` — no edits outside this file, no mutation of the maintainer's real plugin config.
+
+**Verdict: ONE MORE ROUND** (2 new MAJOR, 3 new MINOR, 2 new NIT; 16 of 18 Round 1 findings verified fixed).
+
+---
+
+## Round 1 disposition scorecard
+
+| ID | Round 1 finding | Disposition | Verified |
+| :-- | :-- | :-- | :-- |
+| B1 | Unflagged `jasonou` placeholder, no repo | **FIXED** | `jasonou1994` in `README.md:32,55,88,218`, `marketplace.json:6,10-12`, `plugin.json:9-10`. Install from a real source verified end-to-end (below). |
+| M1 | Prompt orders Claude to run `/plugin list` | **FIXED** | `README.md:84` now reads *"run `claude plugin list` in the shell"* — a Bash-executable command. Confirmed it runs non-interactively and prints `Status: ✔ enabled`. |
+| M2 | Prompt reads plugin docs by bare relative path | **NOT FIXED — new defect** | See **R2-A**. |
+| M3 | Reviewer edit authority contradicts the design loop | **FIXED** | `playbook.md:49` is now loop-differentiated and carries the Fixer ≠ judge rationale. Residual: **r2-f**. |
+| M4 | Model requirement dropped | **FIXED** | `playbook.md:78`. Accurate to source (*"the source project ran every author and reviewer on its strongest available subagent model"* — matches `subagent-loop-playbook.md:17-18`). The added *"Reviewers are never given a weaker model than authors"* is a sound extension. |
+| M5 | Wireframe artifact capability unchecked | **FIXED, thoroughly** | `wireframes:14,52,58-60`, `design-loop:42`, `implementation-loop:87`, `e2e-review:26`. The added *"Do not silently substitute a scattering of images, a doc per surface, or a description of what the UI would look like"* closes the degradation path I described, which I had not asked for. |
+| M6 | "Ignore `0 skills`" | **FIXED** | The false claim is gone entirely; Step 3 now checks `claude plugin list` for `Status: ✔ enabled`. String verified exact. |
+| m1 | Descriptions lack triggers | **FIXED** | All five now trigger-shaped, all five gained `name:`. Measured cost (`plugin details`, before vs after): always-on **~328 → ~458 tok**, +40%. Worth it, but see r2-e for the gate that should protect it. |
+| m2 | Invented `500k` | **FIXED** | `playbook.md:71` — the number is gone, replaced with *"No measured threshold exists yet — this methodology has not published one."* Exactly right. |
+| m3 | Three dropped `CLAUDE.md` rules | **FIXED** | `playbook.md:66-68`. All three, each with a rationale. The test-delegation rationale (*"the output of a gate is exactly the thing this methodology refuses to accept second-hand"*) improves on the source, which stated the rule without one. |
+| m4 | Cross-skill refs unlinked | **FIXED (author's call: link, not move)** | `product-discovery:38`, `e2e-review:45`. Both paths verified to resolve. **Upheld** — adjudication A1. |
+| m5 | `validate` presented as coverage | **FIXED, and beyond** | The author matrix-tested and produced the three-way table at `README.md:240-248`. **I independently re-ran the matrix — all three rows CONFIRMED.** See A3. One gap: **r2-e**. |
+| m6 | No version/update story | **PARTIAL** | `version`/`homepage`/`repository`/`license` added to both manifests ✓. The Updating subsection is **wrong** — see **R2-B** and **r2-c**. |
+| m7 | Departures demanded of every reviewer | **FIXED** | `playbook.md:50` — *"where the artifact under review has a Departures section"*. |
+| n1 | `argument-hint` non-conventional, `name` absent | **FIXED / kept (author's call)** | **Upheld** — adjudication A2. |
+| n2 | `./claude-app-bootstrap` wrong from inside repo | **FIXED** | `README.md:196` — *"use `.` if you are standing inside the repository itself"*. |
+| n3 | No `homepage`/`repository` | **FIXED** | Both manifests. |
+| n4 | 45-line paste, no multiline guidance | **FIXED** | `README.md:71`, including the Esc + `/paste` recovery. Better than the fix I proposed. |
+
+---
+
+## Adjudications
+
+### A1 — m4, "link rather than move": **upheld**
+
+Both links resolve (`skills/product-discovery/../implementation-loop/SKILL.md` → EXISTS; same from `e2e-review`). Moving the six gate-honesty rules into the playbook was my preference for load order, but it would have split them from the stage that owns them and forced a restatement — which `playbook.md:63` forbids. The author also added *"read them there rather than working from this summary"* (`e2e-review:45`), which is the part that actually mattered: it stops a reviewer working from the three-clause paraphrase. Correct call.
+
+### A2 — n1, keeping `argument-hint` and adding `name`: **upheld, and my Round 1 concern is retired**
+
+Two things I could not settle in Round 1, now measured:
+
+1. `--strict` **tolerates** `argument-hint` in skill frontmatter — `claude plugin validate .claude-plugin/plugin.json --strict` → `✔ Validation passed` with all five hints present. Not an unrecognized-field warning.
+2. I suspected the four skills that declare `argument-hint` but never reference `$ARGUMENTS` (`grep -c ARGUMENTS` = 0 for `e2e-review`, `product-discovery`, `implementation-loop`, `wireframes`) would silently discard a typed argument. **They do not.** Probe: `Skill(skill='app-bootstrap:wireframes', args='ZZPATHZZ/requirements.md')` → the loaded text carries a trailing `ARGUMENTS: ZZPATHZZ/requirements.md` line appended after the body. The hints are honest. **Verify-then-drop: not reported as a finding.**
+
+### A3 — the coordinator's `${CLAUDE_PLUGIN_ROOT}` edit, reverted to relative links: **reversion upheld, with a recorded caveat**
+
+I tested both forms rather than reasoning about them.
+
+- **`${CLAUDE_PLUGIN_ROOT}` does expand in a skill body.** Variant repo with `Shared doctrine: ${CLAUDE_PLUGIN_ROOT}/docs/playbook.md`; the model reported the loaded line verbatim as `Shared doctrine: /…/rootvar/docs/playbook.md` — *"It does not contain the literal characters `CLAUDE_PLUGIN_ROOT`."* So the coordinator's edit was not broken.
+- **The relative form also works**, as Round 1's G3 established: the runtime injects `Base directory for this skill: /…/skills/design-loop` as line 1, and `../../docs/playbook.md` resolved and Read successfully. Re-confirmed this round for all five skills by path arithmetic (all EXISTS).
+
+Both work, so this is a judgment call, and the author's reasons are good: the repo is now published, so relative links are clickable on GitHub, and they match how `README.md:151` already links the playbook. **Caveat worth recording:** the relative form's correctness depends on the `Base directory` preamble, undocumented runtime behavior the plugin does not control, whereas `${CLAUDE_PLUGIN_ROOT}` is a documented plugin contract. The failure mode if that preamble ever changes is a silent wrong-path Read — the exact class M2 was about. Not worth changing now; worth knowing.
+
+### A4 — the coordinator's `$ARGUMENTS` hedge, reverted: **reversion upheld — the coordinator's premise was factually wrong**
+
+The coordinator's version hedged: *"their invocation arguments, if any: **$ARGUMENTS** — if that reads as a literal placeholder, ask what design this loop is for"*. That describes a failure mode that **does not exist**. Probe with no `args` parameter at all:
+
+```
+Run the full adversarial design-review workflow for: ****
+```
+
+`$ARGUMENTS` substitutes to the **empty string**, never a literal token. The hedge would have shipped a meta-instruction about a placeholder the model can never see, in the skill's first line. The author's replacement — clean `**$ARGUMENTS**` plus a separate `If nothing was named above, ask the maintainer which design this loop is for before launching anything.` (`design-loop:10`) — matches the observed behavior exactly, and reads correctly against the degenerate `for: ****` rendering. **The author was right and the coordinator was wrong.** This is `playbook.md:54` (reviewers argue back with evidence) working in the author's favour.
+
+---
+
+## New findings
+
+### MAJOR
+
+#### R2-A — The M2 fix does not work: the onboarding prompt's `find` command cannot locate the installed plugin
+
+**CONFIRMED by installing the plugin and running the literal command.** `README.md:94-100`.
+
+> `search under ~/.claude/plugins/ for a directory named `app-bootstrap` that contains `skills/` and `docs/playbook.md` (e.g. `find ~/.claude/plugins -type d -name app-bootstrap`)`
+
+Installed into an isolated `CLAUDE_CONFIG_DIR` from a real marketplace source. Actual on-disk layout:
+
+```
+plugins/cache/claude-app-bootstrap/app-bootstrap/0.1.0/{skills,docs,.claude-plugin,README.md,LICENSE}
+```
+
+Running the prompt's own command, then testing its own qualifier:
+
+```
+$ find <plugins-root> -type d -name app-bootstrap
+…/plugins/cache/claude-app-bootstrap/app-bootstrap
+
+…/cache/claude-app-bootstrap/app-bootstrap : skills/=NO   docs/playbook.md=NO
+
+$ find <plugins-root> -name playbook.md
+…/plugins/cache/claude-app-bootstrap/app-bootstrap/0.1.0/docs/playbook.md
+```
+
+The directory named `app-bootstrap` contains exactly one thing: a **version directory** (`0.1.0/`). `skills/` and `docs/playbook.md` live one level below it. So the `find` returns the right *branch* and the prompt's own qualifier — *"that contains `skills/` and `docs/playbook.md`"* — then **rejects the only hit**.
+
+**Failure scenario.** A novice completes the install, pastes the onboarding prompt, gets through steps 1 and 2. Step 3's find succeeds, the qualifier fails, and the prompt's own fail-loud clause fires: *"If you cannot find them, STOP and tell me."* Onboarding halts at step 3 of 4 with "I can't find the plugin's docs" and no recovery path — on the exact step whose failure Round 1 flagged. The fail-loud clause is why this is MAJOR and not BLOCKER: it stalls rather than silently writing boilerplate, which is the correct degradation. But it still stops.
+
+**Minimal fix.** Anchor on the file, not the directory:
+
+```
+find ~/.claude/plugins -path '*app-bootstrap*' -name playbook.md
+```
+
+then read `skills/*/SKILL.md` from that file's grandparent. Verified: this returns the correct path on the first try. Note in the prompt that the plugin tree sits under a version directory, so there may be several — take the highest version.
+
+#### R2-B — The new Updating section documents a command that does not update the plugin
+
+**CONFIRMED by running the full sequence twice.** `README.md:198-204`.
+
+> ```
+> claude plugin marketplace update claude-app-bootstrap
+> ```
+> `Then start a new session to pick up the new version.`
+
+`claude plugin marketplace update` refreshes **marketplace metadata**, not the installed plugin. Test: installed 0.1.0, changed `docs/playbook.md` upstream, committed, ran the README's command:
+
+```
+✔ Successfully updated marketplace: claude-app-bootstrap
+→ cache still contains only 0.1.0; playbook.md unchanged
+```
+
+Then bumped the version to 0.2.0 upstream, committed, ran the README's command again:
+
+```
+✔ Successfully updated marketplace: claude-app-bootstrap
+→ cache still contains only 0.1.0
+$ claude plugin list  →  Version: 0.1.0
+```
+
+The plugin never moved. `claude plugin install` again returns `✔ Plugin … is already installed`. The command that actually works is a subcommand the README never mentions:
+
+```
+$ claude plugin update app-bootstrap@claude-app-bootstrap
+✔ Plugin "app-bootstrap" updated from 0.1.0 to 0.2.0 for scope user. Restart to apply changes.
+→ cache now holds 0.1.0 and 0.2.0; 0.2.0/docs/playbook.md carries the new content
+```
+
+`claude plugin --help` confirms: `update [options] <plugin>   Update a plugin to the latest version (restart required to apply)`.
+
+**Failure scenario.** A team adopts the plugin. Doctrine is corrected upstream — say, the M3 reviewer-authority fix. Everyone runs the documented command, sees `✔ Successfully updated marketplace`, restarts as instructed, and keeps running the old doctrine indefinitely. The success message makes this undetectable: the command they were told to run succeeded, and the thing they wanted did not happen.
+
+**Minimal fix.**
+
+```
+claude plugin marketplace update claude-app-bootstrap    # refresh the catalog
+claude plugin update app-bootstrap@claude-app-bootstrap  # actually upgrade the plugin
+```
+
+and change *"Then start a new session"* to quote the tool's own instruction, `Restart to apply changes.`
+
+---
+
+### MINOR
+
+#### r2-c — The Updating section contradicts itself on pinning, and "nothing to pin to" is wrong
+
+**CONFIRMED.** `README.md:204` vs `README.md:206`.
+
+> `:204` — *"The plugin pins `"version"` … so consumers only move when that field is bumped."*
+> `:206` — *"No release tags have been cut yet, so there is currently nothing to pin to; a team that needs doctrine which cannot move under them should vendor the repo…"*
+
+Line 204's mechanism claim is **true** — confirmed above: a content change with no version bump never propagated, and only the version bump produced a `0.2.0` tree. That makes 206 self-refuting. A consumer at 0.1.0 stays at 0.1.0 until someone runs `claude plugin update`; *that is the pin*. The advice to vendor the repo is heavier than the situation needs, and it is the one piece of guidance here a reader might act on.
+
+Also unmentioned: `claude plugin tag` exists (`claude plugin --help`: *"Create a `{name}--v{version}` git tag for a plugin release, validating that plugin.json and any enclosing marketplace entry agree"*) — that is the tool for the release-tag gap 206 laments, and it validates exactly the two-manifest agreement this repo now maintains by hand.
+
+**Fix.** Replace 206's second half with: *"Consumers stay on the version they installed until they run `claude plugin update`, so the pin is opt-in upgrade rather than a tag. Releases are cut with `claude plugin tag`, which checks that `plugin.json` and the marketplace entry agree."*
+
+#### r2-d — `/reload-plugins` was deleted entirely, leaving the in-session install path incomplete
+
+**CONFIRMED.** `README.md:53,55,228`; the removed text is in the `823ade1..HEAD` diff.
+
+Fixing M6 removed every mention of `/reload-plugins` and replaced it with "start a new session". That is safe but strictly worse, and it breaks the new **Alternative — from inside Claude Code** route at `:55`, which stops at *"then `/plugin list` to confirm"*. What Claude Code actually prints after an in-session install is one of two strings, both verbatim in the 2.1.226 binary:
+
+```
+Plugin is now active.
+Run /reload-plugins to activate.
+```
+
+A reader who takes the Alternative route sees the second one and finds nothing about it anywhere in the README — the one command they were just told to run is undocumented. Round 1's G4 credited this README for quoting real UI strings; this fix threw away two of them.
+
+**Fix.** At `:55`, append: *"If it says `Run /reload-plugins to activate.`, type that; if it says `Plugin is now active.`, you're done."* Keep "start a new session" as the terminal-route instruction, where it is correct.
+
+#### r2-e — The recommended `validate` command omits `--strict`, the flag that catches the defect class m1 just fixed
+
+**CONFIRMED.** `README.md:234`, `README.md:242-244`.
+
+The dev block recommends `claude plugin validate ./claude-app-bootstrap/.claude-plugin/plugin.json` with no `--strict`. Injecting a missing `description:` into one skill:
+
+```
+$ claude plugin validate .claude-plugin/plugin.json
+⚠ Found 1 warning:
+  ❯ description: No description in frontmatter. …
+✔ Validation passed with warnings          exit=0
+
+$ claude plugin validate .claude-plugin/plugin.json --strict
+✘ Validation failed (--strict treats warnings as errors)   exit=1
+```
+
+So the recommended command **exits 0** on a dropped description — the exact failure the table's own trap paragraph (`:248`) warns about (*"dropping its description, so it simply stops surfacing"*), and the exact asset m1 just spent 130 always-on tokens improving. Anything scripted off the README's command will not catch it. The table's row 2 (*"Plugin manifest and every skill's frontmatter"*) is accurate for parse errors but overstates coverage at the default flag level.
+
+Related: row 3 says `plugin details` is *"The only check that proves all five skills load."* Under the frontmatter injection it printed `Skills (5)` for a plugin with unparseable frontmatter — it proved the skill loaded, but with empty metadata. The prose is defensible (the trap paragraph says exactly this), and the tell is visible in the token column (`wireframes  < 20` vs `~100`). Worth one clause so the reader knows what to look at.
+
+**Fix.** Add `--strict` to `README.md:234` and to the table's row 2; add to row 3 *"— a broken skill still counts, but its always-on token figure collapses to `< 20`."*
+
+---
+
+### NIT
+
+- **r2-f — The e2e journey reviewer has no stated edit authority.** The M3 fix rewrote `playbook.md:49` as *"it differs by loop"* and enumerates exactly two: implementation and design. The Stage 5 reviewer (`e2e-review:42`) belongs to neither, and `grep -n "e2e\|journey" docs/playbook.md` returns nothing. A gap created by the fix, in a stub stage, so it costs almost nothing to close: add *"A journey-results reviewer follows the implementation-loop rule"* to `:49`, or add it to `e2e-review`'s open-questions list, which already collects exactly this kind of unresolved item.
+- **r2-g — `README.md:35`'s claimed Step 1 output is a prefix of the real output.** Actual: `✔ Successfully added marketplace: claude-app-bootstrap (declared in user settings)`. Harmless, but Steps 2 and 3 quote their strings exactly, so this is the odd one out.
+
+---
+
+## What Round 2 got right
+
+- **The author matrix-tested my m5 finding instead of accepting it, and was right to.** Round 1 said `validate` "never opens `skills/`". That is true of `claude plugin validate .` on this repo and **false** of `claude plugin validate .claude-plugin/plugin.json`. I re-ran the matrix independently with an injected `Multiline implicit key` defect and confirm all three rows of `README.md:242-246`, including the error text quoted verbatim (`❯ frontmatter: YAML frontmatter failed to parse`) and the claim that skill lines print only on error. Correcting a reviewer with a receipt is exactly the behavior `playbook.md:54` asks for.
+- **A4: the author overruled the coordinator on `$ARGUMENTS` and was correct**, as the empty-substitution probe proves. Two independent instances this round of the author holding a position against a higher-status instruction and being vindicated by measurement.
+- **M5 was over-delivered.** The fallback was propagated to all four downstream consumers *and* hardened against the substitution I described but did not ask to be blocked (*"Do not silently substitute a scattering of images…"*).
+- **m2's fix is exemplary.** The invented `500k` was not replaced with a better guess; it was replaced with an explicit statement that no measurement exists and what signal to use instead — which is what the plugin's own rule 6 demands of everyone else.
+- **The Round 1 evidence was reused, not re-derived.** `README.md:240` cites the version it was tested against and the method (*"by injecting a YAML frontmatter defect into a skill and re-running each form"*). That is a gate that has been watched fail — rule 3, applied to documentation.
+
+---
+
+## Round 2 checklist
+
+| # | Item | Status |
+| :-- | :-- | :-- |
+| 1 | All 18 Round 1 findings verified against current text, not claims | **PASS** — scorecard above; 16 fixed, m6 partial (R2-B), M2 not fixed (R2-A). Every row cites current `file:line`. |
+| 2 | Three your-call items adjudicated on the merits | **PASS** — A1 (m4 link) upheld; A2 (n1) upheld, with my Round 1 concern retired by two measurements. |
+| 3 | Both coordinator reversions adjudicated, citing G3 | **PASS** — A3 (both forms verified to work; reversion upheld with caveat), A4 (coordinator's premise disproven by probe; reversion upheld). |
+| 4 | New surfaces attacked | **PASS** — onboarding step 1 (fixed, verified executable) and step 3 (**R2-A**, broken); validate table (independently re-verified, all three rows CONFIRMED, one gap **r2-e**); Updating/stability (**R2-B**, **r2-c**); trigger descriptions (fixed; cost measured 328→458 tok). |
+| 5 | Round 2 appended above Round 1, newest-first; no edits outside REVIEW.md | **PASS** — `git status` shows `REVIEW.md` only. All tests ran on throwaway copies and an isolated `CLAUDE_CONFIG_DIR`, both deleted. |
+| 6 | Verdict is exactly one of {SHIP, ONE MORE ROUND} | **PASS**. |
+
+---
+
+## Verdict
+
+**ONE MORE ROUND**
+
+Two CONFIRMED MAJORs, both on surfaces created by the Round 1 fixes, and both on the path a first-time user walks: the onboarding prompt stalls at step 3, and the documented update command reports success while doing nothing. Neither is deep — R2-A is a one-line `find`, R2-B is one extra command — but the update defect is the kind that stays invisible for months, and this repo's whole premise is that a green signal over untested work is the defect class worth chasing.
+
+---
+
 # Round 1 — 2026-08-09 (commit `823ade1`)
 
 Scope: full repo. Sources of truth for the fidelity diff: `/Users/jasonou/code/chess/.claude/commands/design-review.md`, `/Users/jasonou/code/chess/.claude/docs/subagent-loop-playbook.md`, `/Users/jasonou/code/chess/CLAUDE.md` (Agent Workflow Policy), `/Users/jasonou/code/chess/docs/HANDOFF.md` §5. Chess repo read-only; no edits made anywhere.

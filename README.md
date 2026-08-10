@@ -32,7 +32,7 @@ You need Claude Code installed and working. The three commands below get typed i
 claude plugin marketplace add jasonou1994/claude-app-bootstrap
 ```
 
-*What you should see:* `✔ Successfully added marketplace: claude-app-bootstrap`. If you get an error about the repository not being found, use the local-folder method: download or clone this repo somewhere, then run the same command with the folder's path instead, e.g. `claude plugin marketplace add ~/code/claude-app-bootstrap`.
+*What you should see:* `✔ Successfully added marketplace: claude-app-bootstrap (declared in user settings)`. If you get an error about the repository not being found, use the local-folder method: download or clone this repo somewhere, then run the same command with the folder's path instead, e.g. `claude plugin marketplace add ~/code/claude-app-bootstrap`.
 
 **Step 2 — Install the plugin.**
 
@@ -52,7 +52,7 @@ claude plugin list
 
 Now start (or restart) Claude Code in your project: a session picks up newly installed plugins when it starts, so a conversation that was already open won't see it until you begin a new one.
 
-**Alternative — from inside Claude Code:** the same commands exist as *slash commands* at the conversation prompt: `/plugin marketplace add jasonou1994/claude-app-bootstrap`, then `/plugin install app-bootstrap@claude-app-bootstrap`, then `/plugin list` to confirm. These are interactive — follow the prompts, and if asked to choose a scope, pick **User**.
+**Alternative — from inside Claude Code:** the same commands exist as *slash commands* at the conversation prompt: `/plugin marketplace add jasonou1994/claude-app-bootstrap`, then `/plugin install app-bootstrap@claude-app-bootstrap`, then `/plugin list` to confirm. These are interactive — follow the prompts, and if asked to choose a scope, pick **User**. On this route the install tells you whether it took effect right away: if it says `Plugin is now active.`, you're done; if it says `Run /reload-plugins to activate.`, type that command. (Starting a new session, as above, also works.)
 
 The five stages are now available as slash commands. They're named with the plugin's name in front, like this:
 
@@ -92,12 +92,16 @@ Do the following, in order:
    generic boilerplate.
 
 3. Read the plugin's own docs before writing anything — NOT from this repository,
-   which does not contain them. Find the installed plugin first: search under
-   ~/.claude/plugins/ for a directory named `app-bootstrap` that contains
-   `skills/` and `docs/playbook.md` (e.g. `find ~/.claude/plugins -type d -name
-   app-bootstrap`). Then read its five `skills/*/SKILL.md` files and its
-   `docs/playbook.md` from there, and use what they actually say. If you cannot
-   find them, STOP and tell me — do not write the next step from memory.
+   which does not contain them. Locate the installed copy by searching for the
+   file itself, not for a directory:
+       find ~/.claude/plugins -path '*app-bootstrap*' -name playbook.md
+   The plugin tree sits under a VERSION directory, like
+   .../app-bootstrap/0.1.0/docs/playbook.md — so searching for a directory named
+   `app-bootstrap` lands one level too high and finds no `skills/` there. If
+   several versions come back (each update adds one), take the highest. Read that
+   playbook.md, then read the five SKILL.md files from its grandparent directory,
+   at <version>/skills/*/SKILL.md. Use what they actually say. If you cannot find
+   them, STOP and tell me — do not write the next step from memory.
 
 4. Propose an addition to this repository's CLAUDE.md: a section that references the
    five stage-skills by their exact slash-command names
@@ -197,13 +201,18 @@ The path may be any directory containing `.claude-plugin/marketplace.json`, abso
 
 ### Updating
 
+Two commands, and you need both:
+
 ```
-claude plugin marketplace update claude-app-bootstrap
+claude plugin marketplace update claude-app-bootstrap    # refresh the catalog
+claude plugin update app-bootstrap@claude-app-bootstrap  # actually upgrade the plugin
 ```
 
-Then start a new session to pick up the new version. The plugin pins `"version"` in both `plugin.json` and its marketplace entry, so consumers only move when that field is bumped.
+The first only refreshes marketplace metadata. On its own it prints `✔ Successfully updated marketplace: claude-app-bootstrap` while leaving the installed plugin exactly where it was — a green message for something that did not happen, which is the failure class this whole methodology is about. The second is what moves you: `✔ Plugin "app-bootstrap" updated from 0.1.0 to 0.2.0 for scope user. Restart to apply changes.` Do what it says and restart.
 
-**Stability:** this is `0.x`. The stage contracts may change between versions — Stage 5 (`e2e-review`) especially, which ships as an explicit stub. No release tags have been cut yet, so there is currently nothing to pin to; a team that needs doctrine which cannot move under them should vendor the repo and add it from a local path.
+The plugin pins `"version"` in both `plugin.json` and its marketplace entry, so consumers stay on the version they installed until they run `claude plugin update`. **That is the pin** — opt-in upgrade rather than a tag; nothing moves under you in a running session or an untouched install.
+
+**Stability:** this is `0.x`. The stage contracts may change between versions — Stage 5 (`e2e-review`) especially, which ships as an explicit stub. Releases are cut with `claude plugin tag`, which creates a `{name}--v{version}` git tag and validates that `plugin.json` and the marketplace entry agree on the version (this repo maintains those two by hand, so that check is worth running).
 
 ### Enable in a project
 
@@ -231,19 +240,19 @@ Collaborators are prompted to install it when they trust the repository folder. 
 
 ```
 claude --plugin-dir ./claude-app-bootstrap
-claude plugin validate ./claude-app-bootstrap/.claude-plugin/plugin.json
+claude plugin validate ./claude-app-bootstrap/.claude-plugin/plugin.json --strict
 claude --plugin-dir ./claude-app-bootstrap plugin details app-bootstrap
 ```
 
 `--plugin-dir` loads the plugin without installing it and takes precedence over an installed copy of the same name for that session. Edits to skill files are picked up at the next session start.
 
-**Which check covers what** — verified against Claude Code 2.1.226 by injecting a YAML frontmatter defect into a skill and re-running each form:
+**Which check covers what** — verified against Claude Code 2.1.226 by injecting two different defects into a skill (an unparseable frontmatter colon, and a deleted `description:`) and re-running each form:
 
 | Command | What it actually reads |
 | :-- | :-- |
 | `claude plugin validate .` (repo root) | **Marketplace manifest only.** Because this repo contains `.claude-plugin/marketplace.json`, `validate` resolves it as a marketplace and never opens `skills/`. It printed `✔ Validation passed` with a broken skill on disk. |
-| `claude plugin validate .claude-plugin/plugin.json` | Plugin manifest **and every skill's frontmatter**. This is the form that caught the injected defect: `❯ frontmatter: YAML frontmatter failed to parse`. Skill lines print only on error. |
-| `claude --plugin-dir . plugin details app-bootstrap` | What actually loads at runtime — the component inventory (`Skills (5) …`) and per-skill token cost. The only check that proves all five skills load. |
+| `claude plugin validate .claude-plugin/plugin.json --strict` | Plugin manifest **and every skill's frontmatter**. This is the form that caught the injected defect: `❯ frontmatter: YAML frontmatter failed to parse`. Skill lines print only on error. **Keep `--strict`**: without it, a *missing* `description` is only a warning — `✔ Validation passed with warnings`, exit 0 — so the default command greenlights a skill that has silently stopped surfacing. With `--strict` the same input exits 1. |
+| `claude --plugin-dir . plugin details app-bootstrap` | What actually loads at runtime — the component inventory (`Skills (5) …`) and per-skill token cost. The only check that proves all five skills load — but note a broken skill still counts toward `Skills (5)`; the tell is the token column, where its always-on figure collapses to `< 20` against a healthy `~100`. |
 
 The trap worth knowing: a green `claude plugin validate .` on this repo means two JSON files parse. It is not evidence about the skills. A frontmatter error is otherwise silent — the runtime loads the skill with *empty metadata*, dropping its description, so it simply stops surfacing.
 
