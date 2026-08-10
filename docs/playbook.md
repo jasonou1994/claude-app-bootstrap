@@ -68,10 +68,11 @@ Every reviewer brief carries all six of these:
 
 ## 5 · Persistent author, persistent reviewer
 
-- **The author agent is continued, never respawned mid-loop.** Keep its agent id and continue it for every revision round — the accumulated context is the value. Retire it and start a fresh author only when its context approaches exhaustion (roughly 500k tokens), and then hand the successor the design doc plus the review trail as its ground truth.
+- **The author agent is continued, never respawned mid-loop.** Keep its agent id and continue it (via SendMessage, or the environment's equivalent) for every revision round — the accumulated context is the value. Retire it and start a fresh author only when its context approaches exhaustion (roughly 500k tokens), and then hand the successor the design doc plus the review trail as its ground truth.
 - **The reviewer is persistent across rounds within a loop.** One reviewer sees every round, so it can verify dispositions against the revised text rather than re-deriving the design each time. Rounds stack **newest-first** in a single review file next to the artifact under review.
 - **A fresh reviewer starts each new loop or phase.** The design loop's reviewer does not review the implementation; each implementation phase gets its own reviewer. Fresh eyes per unit of work; continuity within it.
 - **Keep reviewer contexts open after they finish**, so the coordinator can ask follow-up questions instead of re-litigating from scratch.
+- **Agent model choice is a maintainer setting, recorded in the project's `CLAUDE.md`** (the source project ran all authors and reviewers on its strongest available subagent model). Reviewers are never given a weaker model than authors.
 
 ---
 
