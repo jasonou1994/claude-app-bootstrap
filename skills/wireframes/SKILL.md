@@ -7,7 +7,7 @@ argument-hint: "[path to the signed-off requirements doc]"
 
 Turn the signed-off requirements into a picture of every surface the product has. This stage exists because a design doc written before the UI is known will encode a data model the UI cannot render, and nobody finds out until implementation.
 
-Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
+Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
 
 **Entry gate:** the Stage 1 requirements doc is signed off.
 **Exit gate:** the maintainer signs off the wireframes, and the published artifact URL is recorded in the project's `CLAUDE.md` as the UI source of truth.

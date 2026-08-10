@@ -7,7 +7,7 @@ argument-hint: "[the product idea, or a path to existing notes]"
 
 Turn an idea into a requirements artifact the rest of the methodology can be held against. Nothing downstream — no wireframe, no design doc, no line of code — is valid without this.
 
-Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
+Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
 
 **Exit gate: the maintainer signs off the requirements doc.** Not "seems reasonable" — an explicit sign-off. Until then this stage is still running.
 

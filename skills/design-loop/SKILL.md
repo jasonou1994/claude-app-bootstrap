@@ -5,11 +5,11 @@ argument-hint: "[topic, or path to an existing design doc]"
 
 # Stage 3 — The design loop
 
-Run the full adversarial design-review workflow for a major design: **$ARGUMENTS**
+Run the full adversarial design-review workflow for the design the maintainer named when invoking this stage (their invocation arguments, if any: **$ARGUMENTS** — if that reads as a literal placeholder, ask what design this loop is for before proceeding).
 
 Use it for any design large enough to deserve a design doc — especially one that ships interface sketches. **The loop does not exit until the adversarial reviewer's verdict is a plain SHIP**, and implementation never begins until the maintainer then approves the shipped design.
 
-Shared doctrine — read it before launching anything: [`../../docs/playbook.md`](../../docs/playbook.md).
+Shared doctrine — read it before launching anything: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
 
 **Entry gate:** signed-off requirements (Stage 1) and locked wireframes (Stage 2).
 **Exit gate:** a plain SHIP verdict, then a separate maintainer approval gate.

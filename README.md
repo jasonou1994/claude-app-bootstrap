@@ -24,41 +24,35 @@ Five stages, in order. Think of it as five conversations with Claude, each one e
 
 ## Install it, step by step
 
-You need Claude Code installed and working. Open a terminal, go to your project folder, and type `claude` to start it. Everything below gets typed **inside Claude Code**, at the prompt where you'd normally talk to Claude. Lines starting with `/` are called *slash commands* — type them exactly, including the slash, and press Enter.
+You need Claude Code installed and working. The three commands below get typed in a **terminal** (the same place you'd type `claude` to start Claude Code) — not inside a Claude conversation. This route is fully verified; an alternative from inside Claude Code follows.
 
 **Step 1 — Tell Claude Code where to find this plugin.**
 
 ```
-/plugin marketplace add jasonou/claude-app-bootstrap
+claude plugin marketplace add jasonou/claude-app-bootstrap
 ```
 
-*What you should see:* a confirmation that the marketplace `claude-app-bootstrap` was added. If you get an error about the repository not being found, use the local-folder method: download or clone this repo somewhere, then type `/plugin marketplace add` followed by a space and the path to the folder, e.g. `/plugin marketplace add ~/code/claude-app-bootstrap`.
+*What you should see:* `✔ Successfully added marketplace: claude-app-bootstrap`. If you get an error about the repository not being found, use the local-folder method: download or clone this repo somewhere, then run the same command with the folder's path instead, e.g. `claude plugin marketplace add ~/code/claude-app-bootstrap`.
 
 **Step 2 — Install the plugin.**
 
 ```
-/plugin install app-bootstrap@claude-app-bootstrap
+claude plugin install app-bootstrap@claude-app-bootstrap
 ```
 
-*What you should see:* a panel showing what the plugin will install and asking where to install it. Pick **User scope** if you want it available in all your projects (this is the usual choice), or **Project scope** if you want everyone working on this one repository to get it. Then confirm.
+*What you should see:* `✔ Successfully installed plugin: app-bootstrap@claude-app-bootstrap (scope: user)`. User scope means it's available in all your projects, which is what you want.
 
-**Step 3 — Turn it on, if asked.**
-
-After installing, Claude Code tells you one of two things. If it says `Plugin is now active.`, you're done. If it says `Run /reload-plugins to activate.`, then type:
+**Step 3 — Check it worked.**
 
 ```
-/reload-plugins
+claude plugin list
 ```
 
-*What you should see:* a summary of what reloaded. Don't worry if it says `0 skills` — that counter doesn't cover this plugin's kind of skills. If it warns you and refuses, run it again as `/reload-plugins --force`.
+*What you should see:* `app-bootstrap@claude-app-bootstrap` with `Status: ✔ enabled`. (For a detailed view — its five skills and what they cost per session — `claude plugin details app-bootstrap`.)
 
-**Step 4 — Check it worked.**
+Now start (or restart) Claude Code in your project: a session picks up newly installed plugins when it starts, so a conversation that was already open won't see it until you begin a new one.
 
-```
-/plugin list
-```
-
-*What you should see:* `app-bootstrap` in the list, marked enabled.
+**Alternative — from inside Claude Code:** the same commands exist as *slash commands* at the conversation prompt: `/plugin marketplace add jasonou/claude-app-bootstrap`, then `/plugin install app-bootstrap@claude-app-bootstrap`, then `/plugin list` to confirm. These are interactive — follow the prompts, and if asked to choose a scope, pick **User**.
 
 The five stages are now available as slash commands. They're named with the plugin's name in front, like this:
 
@@ -81,14 +75,16 @@ I've installed the `app-bootstrap` Claude Code plugin and I want this repository
 
 Do the following, in order:
 
-1. Check the plugin is actually installed and enabled: run `/plugin list` (or the
-   equivalent check) and tell me what you find. If `app-bootstrap` is not there,
-   walk me through installing it one step at a time — tell me exactly what to type,
-   wait for me to tell you what I saw, and only then give me the next step. The
-   install steps are: add the marketplace (`/plugin marketplace add jasonou/claude-app-bootstrap`,
-   or a local folder path if I have the repo cloned), then `/plugin install
-   app-bootstrap@claude-app-bootstrap`, then `/reload-plugins` if it asks for it.
-   Do not continue to step 2 until the plugin is confirmed installed.
+1. Check the plugin is actually installed and enabled: run `claude plugin list` in
+   the shell and tell me what you find. If `app-bootstrap` is not there, walk me
+   through installing it one step at a time — tell me exactly what to type in my
+   terminal, wait for me to tell you what I saw, and only then give me the next
+   step. The install steps are: add the marketplace (`claude plugin marketplace add
+   jasonou/claude-app-bootstrap`, or a local folder path if I have the repo
+   cloned), then `claude plugin install app-bootstrap@claude-app-bootstrap`, then
+   confirm with `claude plugin list`. Remind me the skills only appear in sessions
+   started after the install. Do not continue to step 2 until the plugin is
+   confirmed installed.
 
 2. Read this repository — its README, its existing CLAUDE.md if there is one, its
    folder structure, its package/build files — enough to describe what it actually
@@ -212,7 +208,7 @@ Replace `jasonou` with the owner the repository is actually hosted under. Other 
 }
 ```
 
-Collaborators are prompted to install it when they trust the repository folder. If a session reports the plugin as not yet active, run `/reload-plugins` (or `/reload-plugins --force` if it warns about the prompt cache).
+Collaborators are prompted to install it when they trust the repository folder. Plugins load at session start, so a session that was already open when the plugin was installed won't see it — start a new session.
 
 ### Develop against it locally
 
@@ -221,7 +217,7 @@ claude --plugin-dir ./claude-app-bootstrap
 claude plugin validate ./claude-app-bootstrap
 ```
 
-`--plugin-dir` loads the plugin without installing it and takes precedence over an installed copy of the same name for that session. Run `/reload-plugins` after edits.
+`--plugin-dir` loads the plugin without installing it and takes precedence over an installed copy of the same name for that session. Edits to skill files are picked up at the next session start; `claude plugin validate` catches manifest and frontmatter errors without starting a session.
 
 ## Referencing the stages from a project's CLAUDE.md
 

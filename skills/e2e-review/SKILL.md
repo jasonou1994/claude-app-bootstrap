@@ -11,7 +11,7 @@ argument-hint: "[journey name, or 'all']"
 >
 > Until then: use it as a checklist to think with, expect to improvise, and write down what actually happened so the next version of this file is real.
 
-Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
+Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
 
 **Entry gate:** every implementation phase has SHIPped and the app runs locally.
 **Exit gate (intended):** every journey defined from the wireframes passes against the running app, and the adversarial reviewer's verdict on the journey results is a plain SHIP.

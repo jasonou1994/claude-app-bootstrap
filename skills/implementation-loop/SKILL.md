@@ -7,7 +7,7 @@ argument-hint: "[path to the approved design doc, or the phase to run]"
 
 Implement an approved design, **one phase at a time**, each phase its own author → adversarial reviewer loop that runs until a plain SHIP.
 
-Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
+Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
 
 **Entry gate:** the design has SHIPped *and* the maintainer has approved it. Not one or the other.
 **Exit gate per phase:** a plain SHIP from that phase's adversarial reviewer, plus the coordinator's own independent spot-check.
