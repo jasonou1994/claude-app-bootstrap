@@ -1,7 +1,7 @@
 {
   "name": "app-bootstrap",
   "displayName": "App Bootstrap",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A five-stage methodology for taking an app from an idea to shipped code: product discovery, wireframes, an adversarial design loop, a phased implementation loop, and end-to-end review.",
   "author": {
     "name": "Jason Ou"
