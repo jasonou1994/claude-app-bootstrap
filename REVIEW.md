@@ -4,6 +4,61 @@ Rounds stack **newest-first**.
 
 ---
 
+# Round 5 — Fable confirmation — 2026-08-09 (commit `f789ac3`) — narrow
+
+Scope: the nine Round 4 dispositions, the two source-playbook fold-ins, and the surfaces this commit touched. Nothing else. Every factual claim below was re-verified by me against the current text or by re-running the command, not taken from the author's report.
+
+**Verdict: SHIP** — covering the tree **at `f789ac3`, contingent on the coordinator pushing this commit (and the two beneath it) to origin immediately**. F1 is a distribution defect; it closes at the push, not at the commit. Accepted residue: none — no open findings at any severity.
+
+---
+
+## Dispositions
+
+| ID | Disposition | Verified |
+| :-- | :-- | :-- |
+| **F1** version/release gap | **FIXED, contingent on push** | Both manifests at `0.2.0` (`plugin.json:4`, `marketplace.json:12`). `claude plugin tag --dry-run` run by me: both read 0.2.0, would cut `app-bootstrap--v0.2.0` at HEAD. I also **watched the gate fail**: injected a `0.3.0` mismatch into a temp copy's marketplace entry → `✘ Version mismatch: plugin.json says "0.2.0" but … plugins[0].version says "0.3.0"` — so the corollary's claim that tag "refuses to cut the release unless the two agree" is measured, not assumed. Push-corollary paragraph present in Updating (`README.md:224`) and states the exact failure mode F1 described. Distribution parity **independently reproduced**: fresh isolated-config install from the repo at HEAD lands under `cache/…/0.2.0/`, and all 7 doctrine files (playbook + 5 skills + README) diff **identical** to HEAD. |
+| **F2** SHIP semantics | **FIXED** | `playbook.md:37`. Adjudicated below. |
+| **F3** rule 1 anchored on the work | **FIXED** | `implementation-loop:41`. The evidence list now leads with *"the work itself was interrupted — its output stops mid-record, its effect is absent"*, and the sentence *"'A process died' is not evidence: in the anecdote above a process really did die, and it was the wrong one"* closes the exact literal-execution path Round 4 traced. The rule as now written can no longer be satisfied by the shim's death. |
+| **F4** History provenance | **FIXED** | `README.md:294-300`. Five rules cited individually; each checked against source: rule 1 (grandchild, five phases — HANDOFF §5 ✓), rule 2 (fired-vs-right ✓), rule 3 (vacuous pin + unreachable-branch fixture, both real ✓), rule 5 (three inversions ✓), rule 6 (14h projected / ≈23h measured — matches HANDOFF §6's backfill numbers ✓). Rule 4 now honestly split: the checklist requirement labeled prophylactic; its "necessary but not sufficient" half traced to the question-mark item — which is **real**, verbatim at `subagent-loop-playbook.md:36`, not invented to fill the gap (I checked precisely because inventing it would have been the tempting fix). |
+| **F5** empty-repo branch | **FIXED** | `README.md:92-94`. *"If the repository is brand-new, empty, or nearly so, say that plainly and ask me what it is going to be … Do NOT invent a characterization to satisfy this step."* Names the walker's exact escape hatch and removes the wrong-way incentive. |
+| **F6** config-dir find | **FIXED** | `README.md:98-101`. `find "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins …` plus the why (*"can return a confident hit belonging to some other install"*). |
+| **r3-a** cache/marketplaces clause | **FIXED** | `README.md:102-104`. *"Prefer a hit under `plugins/cache/` … The cache copy IS the installed plugin; the marketplaces copy is just the checkout of the catalog repo, and has no version directory."* Accurate to both of my installs (GitHub and local-path). Resolves the exact line where Round 3's reviewer and the blind walker both stalled. |
+| **Fold-in: question-mark example** | **VERIFIED REAL** | `playbook.md:63` matches `subagent-loop-playbook.md:36` in substance and quotation. |
+| **Fold-in: wave constants** | **VERIFIED REAL** | `playbook.md:67` (*">20 agents … waves of roughly 20"*) matches `subagent-loop-playbook.md:47`. Replaces the vague "very large fan-outs" with the source's constants — the right direction under rule 6. |
+
+Residual sweep of touched surfaces: the one remaining `0.1.0` string (`README.md:220`) is the quoted example output of a real `plugin update` run — legitimate, and now coincidentally exact for this release. `claude plugin validate .claude-plugin/plugin.json --strict` → `✔ Validation passed`. No stale version references, no new contradiction between the §2 addition and the skills' "plain SHIP" language (the addition defines what "plain" admits).
+
+---
+
+## Adjudication — the F2 wording vs the F2 concern
+
+The author's sentence: *"a SHIP asserts that no BLOCKER or MAJOR finding is open, and that every remaining MINOR and NIT is explicitly listed in the verdict as accepted residue for the maintainer."*
+
+This **deviates from Round 4's proposed fix** (which would have had any open MINOR block SHIP) — and the deviation is an improvement, not a dodge. Both of Round 4's failure modes are closed: the termination problem (a reviewer can now end a loop while honestly enumerating what remains) and the hedge ambiguity (the ban is re-scoped to *unenumerated* qualifiers, which is what "SHIP modulo two nits" actually was). Allowing enumerated MINORs as residue is defensible because every SHIP in this methodology flows into a maintainer gate that adjudicates exactly that residue; the stricter rule would have re-created the infinite-NIT loop one severity level up.
+
+**Does Round 3's "SHIP (all seven fixed; one NIT, non-blocking)" now parse as legal residue? Yes.** No BLOCKER or MAJOR was open; the one NIT (r3-a) was explicitly named in the round with its fix — enumerated, not gestured at. The new sentence retroactively legitimizes the trail's own precedent instead of contradicting it, which is the test Round 4 set.
+
+---
+
+## Round 5 checklist
+
+| # | Item | Status |
+| :-- | :-- | :-- |
+| 1 | All 9 dispositions verified against current text / by re-run, not the author's report | **PASS** — table above; F1's three receipts (dry-run, watched-fail mismatch, 7/7 parity diff) produced by me. |
+| 2 | F2 wording adjudicated against the original concern, incl. the Round 3 parse test | **PASS** — deviation identified, upheld; Round 3 parses legal. |
+| 3 | Both fold-ins traced to the source rather than trusted | **PASS** — `subagent-loop-playbook.md:36,47`. |
+| 4 | Touched surfaces swept for residue | **PASS** — one benign `0.1.0` (quoted output), `--strict` clean. |
+| 5 | Round 5 newest-first; no edits outside REVIEW.md; no tag created; scratch deleted; never pushed | **PASS** — `git status` clean before this edit; `git tag -l` empty; the mismatch test ran in a scratch copy since deleted. |
+| 6 | Verdict is exactly one of {SHIP, ONE MORE ROUND} | **PASS**. |
+
+## Verdict
+
+**SHIP**
+
+All nine dispositions are fixed as verified against the text at `f789ac3`, both fold-ins trace to the source, and the one wording that departed from my proposed fix is better than what I proposed. This verdict covers the tree at `f789ac3` and is **contingent on the coordinator's immediate push of commits `72d37cc`, `11644e2`, and `f789ac3` to origin** — until that push lands, the F1 defect remains live for every real consumer, and this SHIP does not exist in the world it describes. Cutting `app-bootstrap--v0.2.0` with `claude plugin tag` at the same moment is the corollary paragraph practicing what it preaches.
+
+---
+
 # Round 4 — Fable final review — 2026-08-09 (commit `11644e2`, local; **origin/main is at `f106d95`**)
 
 Maintainer-requested extra gate above the three-round Opus loop, for two stated reasons: judge the prose as prose, and run the end-to-end blind usability test that had never been run. Premise adversarial: assume defects remain in the places Opus reviews are weakest.
