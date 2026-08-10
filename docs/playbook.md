@@ -34,6 +34,8 @@ Findings inside a round use a separate two-axis vocabulary:
 - **Severity**: BLOCKER / MAJOR / MINOR / NIT
 - **Confidence**: CONFIRMED (with `file:line`) or PLAUSIBLE (with what would confirm it)
 
+**Which severities block a SHIP:** a SHIP asserts that no BLOCKER or MAJOR finding is open, and that every remaining MINOR and NIT is explicitly listed in the verdict as accepted residue for the maintainer. Listing accepted residue is not a hedge — it is the verdict doing its job; what §2 bans is the *unenumerated* qualifier ("mostly fine", "modulo a few nits") that leaves the reader to guess what is still open. Without this rule the loop has no termination condition, since a reviewer instructed that "no issues found" is a failed review can always produce one more NIT.
+
 ---
 
 ## 3 · Adversarial briefing template
@@ -58,11 +60,11 @@ Every reviewer brief carries all six of these:
 ## 4 · Subagent discipline
 
 - **Verification checklist (required).** Every subagent brief ends with an enumerated checklist of concrete, checkable criteria. The agent must not finish until it has re-read its own output and confirmed every item, and must return the completed checklist (each item PASS + a one-line justification) in its report. Vague goals produce shallow, unverified work.
-- **Self-certified "all PASS" is necessary but not sufficient.** Checklist items have blind spots. The coordinator always reads the actual output before declaring anything done.
+- **Self-certified "all PASS" is necessary but not sufficient.** Checklist items have blind spots. The canonical example: a checklist item reading *"every question ends in ?"* passed, while the interrogative sentences it existed to catch ended in a period — the item was satisfiable without the property it stood for being true. Phrase items to close that gap, and have the coordinator read the actual output before declaring anything done.
 - **Briefs are self-contained.** Each agent starts fresh; the brief carries context, scope, inputs, and output expectations completely — or points at exactly the doc sections that do. "Based on your findings, do X" pushes synthesis onto the agent and produces shallow work.
 - **Never restate in a brief a rule that lives in a doc.** Point at the doc. (Exception: worked examples that must not be compressed travel verbatim.)
 - **Ground truth wins over the brief.** Give every author agent a reading list of the actual code/artifacts, with the standing rule: the source wins over the brief's characterizations, and discrepancies get reported rather than silently reconciled.
-- **Slice work cleanly.** Non-overlapping scopes, one report per agent, run in parallel when there are no ordering dependencies; one at a time when there are. Batch very large fan-outs in waves so completed work survives context exhaustion.
+- **Slice work cleanly.** Non-overlapping scopes, one report per agent, run in parallel when there are no ordering dependencies; one at a time when there are. Batch large fan-outs — more than about 20 agents — in waves of roughly 20 at a time, so completed batches survive context exhaustion.
 - **Do not commit or push unless explicitly requested.** This binds every agent in every stage, and it matters most in the implementation loop, where author agents write files across a whole repository unattended. An agent that commits on its own initiative destroys the maintainer's ability to review a phase as a unit; one that pushes publishes unreviewed work.
 - **Prefer editing existing files over creating new ones.** New files are where duplicated doctrine and orphaned artifacts come from. This is the same instinct as §9's ban on `-v2` copies.
 - **Do not delegate test or verification runs to subagents for concurrency.** Run them from the coordinator. Delegating a gate run puts a summarizing layer between you and the output — and the output of a gate is exactly the thing this methodology refuses to accept second-hand (see the gate-honesty rules in the implementation-loop skill). Delegate the *work*; read the gate yourself.

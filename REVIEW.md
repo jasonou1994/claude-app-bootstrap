@@ -4,6 +4,220 @@ Rounds stack **newest-first**.
 
 ---
 
+# Round 4 — Fable final review — 2026-08-09 (commit `11644e2`, local; **origin/main is at `f106d95`**)
+
+Maintainer-requested extra gate above the three-round Opus loop, for two stated reasons: judge the prose as prose, and run the end-to-end blind usability test that had never been run. Premise adversarial: assume defects remain in the places Opus reviews are weakest.
+
+**Verdict: ONE MORE ROUND** (1 MAJOR — a release-state defect the loop structurally could not see; 5 MINOR; the walkthrough itself largely vindicates the repo).
+
+---
+
+## Part 1 — The blind novice walkthrough
+
+One Opus agent, spawned blind. Its brief, quoted for auditability (framing verbatim; only the scratch paths are elided):
+
+> *"You are a developer who has never used Claude Code plugins before. A friend shared this with you: /Users/jasonou/code/claude-app-bootstrap (a local clone of github.com/jasonou1994/claude-app-bootstrap). You want to try its methodology on a brand-new toy project. Do exactly what its README tells you, as literally as you can: create a fresh project directory with git init … follow the README's install steps (use an ISOLATED config via CLAUDE_CONFIG_DIR=… — treat this as 'your' machine), then walk the 'Set up your project' section and the 'typical first session' section as far as you can actually execute them. For the onboarding prompt: execute its numbered steps yourself as if you were the project's Claude, since you are. For stage skills you cannot meaningfully run, note exactly where you stopped and why. Keep a verbatim log: every command you typed, every output you saw, every point where you were unsure what the README meant, every place you had to guess … Do NOT fix or work around problems silently … Deliver the log plus a plain closing paragraph: would you keep using this?"*
+
+No mention of this review, REVIEW.md, known findings, or defect classes.
+
+**What happened.** Install (Steps 1–3): three commands, under two minutes, every promised output string matched character for character — the walker called it *"the smoothest three-command plugin setup I've seen"*. Onboarding prompt: steps 1–2 and 4 completed; the walker wrote a genuinely good CLAUDE.md for the toy repo (I read it — correct slash names, gate rules, honest empty-repo framing). It stopped at the stage skills: a fresh `CLAUDE_CONFIG_DIR` has no credentials (`Not logged in · Please run /login` — reproduced by me), so stages 1–5 never executed. Its closing verdict: **"Yes, with one caveat"** — keep the plugin, but the onboarding prompt *"hasn't been hardened the way the methodology it teaches would demand."*
+
+**The walker's verbatim friction points**, numbered as it reported them:
+
+1. *"Whether `owner/repo` would clone over HTTPS or SSH — README doesn't say; it used SSH."* (Feared keyless users would fail at command #1.)
+2. *"What to do at onboarding step 2 on an empty repo — no branch exists; I described it as empty."*
+3. *"Whether the `find ~/.claude/plugins` hit was really* my *install — it wasn't; the command ignores `CLAUDE_CONFIG_DIR`."* The walker called this *"a silent false-positive mode: … it will happily read the wrong version's playbook and skills while believing it read yours. That is precisely the failure class the playbook itself is about."*
+4. *"Which of the two returned playbook copies is canonical — guessed the versioned `cache/` one."* (r3-a, hit live by a genuine novice.)
+5. How to satisfy "WAIT for me to approve" when one agent is both parties — inherent to the exercise, not a repo defect.
+6. Could not run a stage skill without an interactive login — environment constraint, not a repo defect.
+
+## Cross-examination of the walker
+
+- **Friction 1 — retired by measurement.** I reproduced the install with `GIT_SSH_COMMAND=/usr/bin/false`: Claude Code prints `SSH clone failed, retrying with HTTPS: https://github.com/…` and succeeds. A keyless novice is fine; the README owes no SSH warning. The walker's fear was reasonable and wrong — verify-then-drop.
+- **Friction 3 — reproduced and confirmed**, but reweighted: on a default machine `~/.claude/plugins` *is* the right tree; the false positive needs a non-default `CLAUDE_CONFIG_DIR` plus a stale copy under the real `~/.claude`. Real, silent, niche → MINOR (F6), not the walker's implied MAJOR.
+- **Friction 4 — reproduced** (my own isolated GitHub install returns the same two hits, `marketplaces/…` and `cache/…/0.1.0/…`). This is r3-a occurring in the wild; adjudicated below.
+- **Silent-deviation sweep of its successes:** the walker deviated from the README's literal text twice, and *flagged both itself* (substituted its own config path for `~/.claude` in the find; self-approved the CLAUDE.md diff). Its stopping point reproduced exactly. One deviation it could **not** have flagged, which it took to *validate* the docs it read: it read the playbook from its installed `cache/0.1.0` copy — which is **not the playbook at HEAD**. That observation is F1.
+
+---
+
+## Part 2 — Findings
+
+### MAJOR
+
+#### F1 — What users actually install today is the pre-review doctrine: the two fix commits are unpushed AND unversioned, so the loop's own confirmed fixes cannot reach any consumer
+
+**CONFIRMED.** `origin/main` = `f106d95`; the unpushed commits are exactly `72d37cc` ("Apply Round 1 …") and `11644e2` ("Apply Round 2 …"). I installed from GitHub into an isolated config and diffed:
+
+- installed `cache/0.1.0/docs/playbook.md:71` still reads *"…approaches exhaustion (roughly 500k tokens)"* — the invented number m2 removed;
+- installed `playbook.md:49` is still the pre-M3 universal *"Reviewers apply line-level fixes in place"* — the design-loop clobbering contradiction, unqualified;
+- `grep "strongest model"` over the installed playbook: **no match** — the M4 model rule is absent;
+- the published README still carries the broken onboarding `find` (R2-A) and the do-nothing update instruction (R2-B).
+
+And the second half is worse than "not pushed yet": **both fix commits left `version` at `0.1.0`** in `plugin.json` and `marketplace.json`. Round 2's own receipts (R2-B, r2-c) prove that a content change without a version bump never propagates — *"only the version bump produced a 0.2.0 tree"*. So even after a push, every existing install runs `claude plugin update`, is told it is current, and keeps the defective doctrine indefinitely. That is the exact failure scenario R2-B described — *"the command they were told to run succeeded, and the thing they wanted did not happen"* — now aimed at the fixes for R2-B itself.
+
+**Why three rounds missed it:** the loop reviewed the repository as text at HEAD. Round 3 even performed a real GitHub install — and used it only to verify directory *layout*, never noticing the content it had installed was two commits stale. Author and reviewer were both right about the tree and both silent about the product. A SHIP on an artifact whose distribution channel serves the pre-fix version is a green light over untested work — the repo's own núcleo failure class.
+
+**Minimal fix (maintainer's act, not the loop's):** bump `version` to `0.2.0` in both manifests (run `claude plugin tag`, which validates they agree — the README already recommends exactly this), commit, and push all three commits together. One sentence in the Updating section noting that doctrine fixes always ride a version bump would make the rule self-enforcing.
+
+### MINOR
+
+#### F2 — The verdict vocabulary never says which severities block SHIP, and the trail itself applies it inconsistently
+
+`playbook.md:30`: *"'Mostly fine', 'ship with reservations', 'SHIP modulo two nits', 'LGTM' — all of these are ONE MORE ROUND."* Round 3's own header: *"Verdict: SHIP (all seven fixed; one NIT, non-blocking)."* Read literally, §2 classifies Round 3's verdict as a hedge — "SHIP modulo one nit". Read charitably, §2 bans hedged *phrasing* but is silent on hedged *content*, and then the ban teaches nothing. The doctrine needs the missing sentence, because both literal readings produce a bad loop: if any open finding blocks SHIP, a reviewer obeying §3's "a review that returns 'looks good' is a failed review" can never terminate the loop (there is no round cap and no anti-stall rule anywhere); if NITs don't block, the plugin should say so instead of leaving each reviewer to legislate it. **Fix:** one sentence in §2, e.g.: *"A SHIP may coexist with open NITs, recorded for the maintainer; it may not coexist with any open BLOCKER, MAJOR, or MINOR."* (That is what Round 3 in fact did — codify it.) Incentive sweep, while here: nothing in the doctrine rewards a reviewer for finding nothing — the skew is the opposite (pressure to manufacture findings), and §3.4's verify-then-drop plus the receipts mechanism are adequate countermeasures. Swept, none found beyond F2.
+
+#### F3 — Gate-honesty rule 1, as written, is satisfiable by the very defect it cites
+
+`implementation-loop:41`: *"capture evidence that the fault happened (**the process really died** and at what point; …)"*. In the canonical `npx`-grandchild failure the rule narrates two paragraphs earlier, a process **really did die** — the shim — while the work ran on. An agent executing the rule's parenthetical literally writes `assert(kill succeeded && process gone)` and reproduces the anecdote under the rule meant to prevent it. The evidence must anchor on the *work*, not on *a process*. **Fix:** *"(the work itself was interrupted — its output stops mid-record or its effect is absent — not merely that some process received the signal; the write really was truncated; …)"*.
+
+#### F4 — The History section overclaims the provenance it sells the rules on
+
+`README.md:285`: *"The six gate-honesty rules in the implementation-loop skill **each trace to a specific defect** that a green gate certified."* Checked against `chess/docs/HANDOFF.md` §5: rules 1, 2, 3 and 5 trace cleanly (grandchild kill; frequency-not-precision; vacuous pin; the three inversions). Rule 6 has a real source trace (the 14h-estimated / ≈23h-measured backfill, HANDOFF §6) but neither the rule nor the README cites it. **Rule 4 (subagent checklists) cites no defect anywhere** — not in the skill, not in the playbook, not in the source docs I can read. For a document whose stated authority is "every rule was paid for in actual bugs," one uncovered claim taxes all six. **Fix:** cite rule 6's trace, and either add rule 4's originating defect or soften to "each of rules 1–3 and 5–6 traces…".
+
+#### F5 — Onboarding step 2 has no branch for the README's own primary scenario: a brand-new empty repo
+
+`README.md:89-92`: *"Read this repository — its README, its existing CLAUDE.md if there is one, its folder structure, its package/build files — enough to describe what it actually is … I want the next step tailored to THIS repo, not generic boilerplate."* The typical-first-session flow targets a fresh project; on an empty repo the instruction is unsatisfiable and the anti-boilerplate pressure points the wrong way — the predictable model behavior is to *invent* a characterization rather than admit there is nothing to read. The blind walker hit exactly this and escaped only by choosing honesty over instruction-following. Step 4 already has the "no CLAUDE.md" branch; step 2 needs its twin. **Fix:** append: *"If the repository is brand-new or empty, say so and ask me what it will be — do not invent a characterization."*
+
+#### F6 — The onboarding `find` hardcodes `~/.claude` and can silently read the wrong machine's-worth of docs
+
+`README.md:97`: *"find ~/.claude/plugins -path '\*app-bootstrap\*' -name playbook.md"*. Under a non-default `CLAUDE_CONFIG_DIR`, the command searches a tree the current install never touched; if a stale copy exists there (as on this machine), it returns a confident hit and step 3's fail-loud clause (*"If you cannot find them, STOP"*) never fires — the one silent-green path in an otherwise fail-loud prompt, observed live by the blind walker. Niche precondition, hence MINOR. **Fix:** `find "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins …`.
+
+### Prose register sweep (receipts)
+
+- **Part 1 / novice register:** swept lines 9–141 sentence by sentence for predictable misreadings. Beyond F5/F6 (both in the onboarding prompt): none found. The walker's live run is the receipt — every install-phase sentence was followed literally by a genuine novice and produced the promised outcome; the SSH gap it feared is closed by the tool itself. The register discipline is real (e.g. line 27's "the same place you'd type `claude`" parenthetical is exactly novice-calibrated).
+- **Skills/playbook / working-agent register:** swept all five SKILL.md files and the playbook for rules an executing agent would misapply. F2 and F3 found; otherwise the register holds — instructions are imperative, scoped, and cite their own failure modes. The interface-consumer exercise (`design-loop:54-58`) and the STUB banner (`e2e-review:9-13`) are the strongest prose in the repo.
+
+### Six gate-honesty rules, spot-checked as WRITTEN against the defects they cite
+
+| Rule | Cited defect | Would the rule as written have caught it? |
+| :-- | :-- | :-- |
+| 1 | `npx` grandchild survives SIGKILL | **Equivocal — F3.** The headline ("assert the fault landed") catches it; the parenthetical ("the process really died") is satisfiable by the shim's death. |
+| 2 | Two wrong rules shipped as "corrections" off firing counts | **Yes.** Demanding precision forces checking the hits; demanding recall forces the labeled set. |
+| 3 | The vacuous pin | **Yes.** Introduce-defect-watch-it-fail detects a pin that passes against reverted code by construction; the fixture-unreachable paragraph covers the Phase 6 recurrence. |
+| 4 | *(none cited — F4)* | Untestable as provenance; sound as practice. |
+| 5 | The three Phase 6 inversions | **Yes.** "Reading code against its own prose and then executing it" is the literal method that found them. |
+| 6 | *(uncited; source trace exists — the 14h→23h backfill miss)* | **Yes.** "Re-measured in the pipeline once real work runs through it, discrepancies as headline items" is exactly what HANDOFF §6 records happening. |
+
+---
+
+## Adjudications of the standing open items
+
+**A3 (relative playbook links vs `${CLAUDE_PLUGIN_ROOT}`): reversion stays upheld, caveat amended.** The Round 2 caveat says the failure mode if the undocumented `Base directory` preamble ever changes is *"a silent wrong-path Read"*. Checked on the merits: without the preamble, `../../docs/playbook.md` resolves against the user's project cwd, where it almost never exists — the Read **fails loudly**, which is the acceptable failure shape. Silence requires the user's own repo to contain a `docs/playbook.md`, a real but rare collision. Keep the relative links (clickable on GitHub, consistent with the README's own link); carry the amended caveat; revisit only if the runtime changes.
+
+**r3-a (the `marketplaces/` vs `cache/` disambiguation clause, unapplied): apply it in the next touch — which F1 makes imminent.** Round 3 priced the NIT on content-divergence and found nil "by construction" at onboarding time. Correct then, and the contents are still identical — but the blind walkthrough showed the cost Round 3 didn't price: a genuinely naive reader *stalls and guesses*, because the prompt's only disambiguation rule ("take the highest" version) does not parse a hit with no version, and the prompt's stated tree shape (`<version>/skills/*/SKILL.md`) does not match the `marketplaces/` hit. Two independent agents (Round 3's, and the blind walker) both had to make an undirected choice at the same line. The one-clause fix rides the F1 version-bump commit for free.
+
+---
+
+## What survived Fable review
+
+- **The install path, end to end** — a blind novice executed every command literally; every promised string matched byte for byte; the SSH gap doesn't exist (HTTPS fallback measured).
+- **The onboarding prompt's defensive core** — fail-loud on missing docs, preserve-everything, show-the-diff, wait-for-approval; it produced a genuinely good CLAUDE.md in the toy project.
+- **The two-register prose discipline** — the novice register and the agent register are each internally consistent; no cross-register bleed found.
+- **The doctrine's incentive structure** — nothing rewards an empty report; verify-then-drop plus per-class receipts counter the manufactured-finding skew.
+- **Rules 2, 3, 5 as written** — each would catch its own originating defect, mechanically.
+- **The review trail's honesty** — every disposition I re-derived (R2-A, R2-B, r2-c, A3, A4, r3-a) reproduced; nothing was closed by assertion. The trail's blind spot (F1) is a scope boundary, not a rigor failure — though the methodology should learn the lesson: *a SHIP on a distributed artifact must include the distribution state.*
+- **The walker's plain-paragraph verdict**: it would keep using it.
+
+## Round 4 completion checklist
+
+| # | Item | Status |
+| :-- | :-- | :-- |
+| 1 | Blind walker spawned, zero-hint brief quoted above | **PASS** — brief contains no mention of the review, REVIEW.md, findings, or defect classes. |
+| 2 | Every walker failure/guess reproduced; every success checked for silent deviation | **PASS** — SSH fallback measured (retired), `find` double-hit and false-positive reproduced on my own isolated install, `Not logged in` reproduced; both walker deviations were self-flagged, and the one it couldn't see became F1. |
+| 3 | Prose findings quote exact sentences with predicted misreadings, per register | **PASS** — F2/F3 (agent register), F4 (History), F5/F6 (novice register), each with the quoted sentence and the misreading. |
+| 4 | All six gate-honesty rules spot-checked against their cited defects | **PASS** — table above; rule 1 equivocal (F3), rule 4 provenance uncovered (F4). |
+| 5 | A3 and r3-a adjudicated with a decision each | **PASS** — A3 upheld with amended caveat; r3-a apply-on-next-touch, upgraded by walkthrough evidence. |
+| 6 | Round 4 newest-first; `git status` clean except REVIEW.md; scratch environments deleted | **PASS** — verified after cleanup. |
+| 7 | Verdict is exactly one of {SHIP, ONE MORE ROUND} | **PASS**. |
+
+## Verdict
+
+**ONE MORE ROUND**
+
+Not because the text at HEAD is unsound — the walkthrough largely vindicated it — but because the thing a user installs today is not the thing three rounds shipped, and the version field guarantees they can never converge through the documented path. The round that closes F1 is one version bump, one push, and four one-sentence edits (F2, F3, F5, F6 + the r3-a clause), with F4 a two-line citation fix. Everything on that list is smaller than this paragraph; none of it is optional for a repo whose thesis is that green lights over undistributed fixes are the defect class worth chasing.
+
+---
+
+# Round 3 — 2026-08-09 (commit `11644e2`) — narrow final
+
+Scope: dispositions of the seven Round 2 findings against current text, adjudication of the r2-f placement call, and an attack limited to the surfaces this commit changed. Tested against Claude Code 2.1.226, including a **real GitHub install** of the published repo into an isolated `CLAUDE_CONFIG_DIR` (since `README.md:94-104` is now specific about on-disk layout, and the local-path install I used in Round 2 does not exercise it).
+
+**Verdict: SHIP** (all seven fixed; one NIT, non-blocking).
+
+---
+
+## Dispositions
+
+| ID | Disposition | Verified |
+| :-- | :-- | :-- |
+| **R2-A** onboarding `find` | **FIXED** | `README.md:94-104`. Ran the literal command against a real GitHub install: it returns the correct `…/0.1.0/docs/playbook.md`. The added explanation of *why* the directory search failed (*"lands one level too high and finds no `skills/` there"*) is accurate to the layout. The grandparent rule checks out — `dirname(dirname(playbook.md))/skills/*/SKILL.md` → **5 files**. See NIT r3-a for the one case the disambiguation rule does not name. |
+| **R2-B** update sequence | **FIXED** | `README.md:204-210`. Both commands, correct order, and the catalog-vs-plugin distinction stated. Quoted outputs match what I observed byte for byte, including `Restart to apply changes.` The framing — *"a green message for something that did not happen, which is the failure class this whole methodology is about"* — is the right register for this repo. |
+| **r2-c** pinning contradiction | **FIXED** | `README.md:212`, `:214`. The self-refuting *"nothing to pin to"* is gone; *"That is the pin — opt-in upgrade rather than a tag"* matches the mechanism I measured. `claude plugin tag`'s description matches `claude plugin --help` verbatim. |
+| **r2-d** `/reload-plugins` | **FIXED** | `README.md:55`. Both binary strings restored (`Plugin is now active.` / `Run /reload-plugins to activate.`), correctly scoped to the in-session route only, with the session-restart path kept as the alternative. |
+| **r2-e** missing `--strict` | **FIXED** | `README.md:243` and table row 2. The added receipt (*"without it, a missing `description` is only a warning — `✔ Validation passed with warnings`, exit 0"*) reproduces my measurement exactly. Row 3's `< 20` vs `~100` tell is likewise correct. Header now says two injected defects, which is what was tested. |
+| **r2-g** marketplace string | **FIXED** | `README.md:35` now carries `(declared in user settings)`. Re-confirmed against a live add. |
+| **r2-f** e2e reviewer authority | **RESOLVED — see adjudication** | `playbook.md:49`. |
+
+Regression sweep on HEAD: `claude plugin validate .claude-plugin/plugin.json --strict` → `✔ Validation passed`, exit 0. `plugin details` → `Skills (5)`, always-on `~458 tok` (unchanged from Round 2). No collateral damage.
+
+---
+
+## Adjudication — r2-f resolved into `playbook.md` §3.5 rather than the stub's open questions: **upheld**
+
+> `A **journey-results reviewer** (Stage 5) follows the implementation-loop rule — it reviews produced artifacts, so it fixes in place and cites the defect per fix — though Stage 5 is a stub and this assignment is provisional until a real cycle tests it.`
+
+Three things make this the better of the two options I offered:
+
+1. **It is where the question gets asked.** A coordinator writing a Stage 5 reviewer brief reads §3.5, not `e2e-review`'s open-questions list. Parking the gap in the stub would have left §3.5 enumerating two loops and silently excluding a third — the same shape as the original M3 defect.
+2. **The assignment is substantively right.** The Stage 5 reviewer's highest-value job (`e2e-review:42`) is *"find a journey that would pass even if the behavior it claims to check were broken"* — a defect **in the journey artifact**, which the reviewer can and should repair in place. That is the implementation-loop case, not the design-loop case where a persistent author would clobber it.
+3. **It is labeled provisional**, which is honest about a stage that has never run and consistent with the stub banner. It also survives contact with §5's *"A fresh reviewer starts each new loop or phase"* — nothing in the new clause contradicts it.
+
+The author also caught what I did not flag: `"In both loops"` → `"In every loop"` in the same sentence, since the enumeration is now three. Correct.
+
+---
+
+## New finding
+
+### NIT
+
+**r3-a — The `find` disambiguation rule does not name the marketplace-clone hit.** `README.md:100-101`.
+
+On a **GitHub** install (the documented route; Round 2's local-path install did not produce this) the command returns two paths, not one:
+
+```
+$ find <plugins-root> -path '*app-bootstrap*' -name playbook.md
+…/plugins/marketplaces/claude-app-bootstrap/docs/playbook.md                 ← git clone, no version dir
+…/plugins/cache/claude-app-bootstrap/app-bootstrap/0.1.0/docs/playbook.md    ← installed copy
+```
+
+The prompt's rule is *"If several versions come back (each update adds one), take the highest"* — which does not resolve a hit that carries no version at all.
+
+Why this is only a NIT: I checked the consequence rather than assuming it. The grandparent rule works for **both** hits (5 `SKILL.md` files each), so either selection yields correct, complete docs. The two copies differ only after an upstream release the user has not pulled — and the onboarding prompt is run once, immediately after install, when they are identical by construction.
+
+**Fix (one clause, whenever the file is next touched).** After *"take the highest"*: *"A hit under `marketplaces/` is the marketplace's git clone rather than your installed copy; prefer the one under `cache/`, which is the version you are actually running."*
+
+---
+
+## Round 3 checklist
+
+| # | Item | Status |
+| :-- | :-- | :-- |
+| 1 | Seven Round 2 dispositions verified against current text | **PASS** — table above, each with a current `file:line` and a re-run receipt where the fix made a factual claim. |
+| 2 | r2-f placement adjudicated on the merits | **PASS** — upheld, three reasons. |
+| 3 | Attack limited to surfaces this commit changed | **PASS** — onboarding step 3, Updating/stability, validate table + dev block, `README.md:35/55`, `playbook.md:49`. One NIT found (r3-a), on the newly rewritten step 3, via a real GitHub install. |
+| 4 | Regression sweep | **PASS** — `--strict` clean, `Skills (5)`, token cost unchanged. |
+| 5 | Round 3 above Round 2, newest-first; no edits outside REVIEW.md | **PASS** — `git status` shows `REVIEW.md` only; isolated config dir deleted. |
+| 6 | Verdict is exactly one of {SHIP, ONE MORE ROUND} | **PASS**. |
+
+---
+
+## Verdict
+
+**SHIP**
+
+Every Round 2 finding is fixed as written, each fix carries a receipt that reproduces what I measured independently, and the one contested call was resolved the better way. The single remaining item is a NIT whose consequence I checked and found to be nil at the moment the instruction actually runs. Three rounds took this from a guide whose first command could not work to one whose every quoted string, path, and command I have executed. Remaining for the maintainer, not the loop: the `${CLAUDE_PLUGIN_ROOT}` caveat recorded in A3, and the standing fact that Stage 5 is a stub the plugin honestly labels as one.
+
+---
+
 # Round 2 — 2026-08-09 (commit `72d37cc`, over coordinator commits `f99cdd1` + `f106d95`)
 
 Scope: verification of all 18 Round 1 dispositions against the **current text**, adjudication of the three your-call items and the two coordinator reversions, and an attack on the new surfaces (rewritten onboarding steps 1/3, the three-way validate table, the Updating/stability subsection, the trigger-shaped descriptions).

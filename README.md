@@ -89,19 +89,28 @@ Do the following, in order:
 2. Read this repository — its README, its existing CLAUDE.md if there is one, its
    folder structure, its package/build files — enough to describe what it actually
    is and how it's actually built. I want the next step tailored to THIS repo, not
-   generic boilerplate.
+   generic boilerplate. If the repository is brand-new, empty, or nearly so, say
+   that plainly and ask me what it is going to be — describe the intended project
+   from what I tell you. Do NOT invent a characterization to satisfy this step.
 
 3. Read the plugin's own docs before writing anything — NOT from this repository,
    which does not contain them. Locate the installed copy by searching for the
    file itself, not for a directory:
-       find ~/.claude/plugins -path '*app-bootstrap*' -name playbook.md
-   The plugin tree sits under a VERSION directory, like
-   .../app-bootstrap/0.1.0/docs/playbook.md — so searching for a directory named
-   `app-bootstrap` lands one level too high and finds no `skills/` there. If
-   several versions come back (each update adds one), take the highest. Read that
-   playbook.md, then read the five SKILL.md files from its grandparent directory,
-   at <version>/skills/*/SKILL.md. Use what they actually say. If you cannot find
-   them, STOP and tell me — do not write the next step from memory.
+       find "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins -path '*app-bootstrap*' -name playbook.md
+   Use that exact form — a hardcoded ~/.claude searches the wrong tree whenever
+   CLAUDE_CONFIG_DIR is set, and can return a confident hit belonging to some
+   other install. Two notes on reading the results:
+     - Prefer a hit under plugins/cache/ over one under plugins/marketplaces/.
+       The cache copy IS the installed plugin; the marketplaces copy is just the
+       checkout of the catalog repo, and has no version directory.
+     - The cache tree sits under a VERSION directory, like
+       .../app-bootstrap/0.2.0/docs/playbook.md — so searching for a DIRECTORY
+       named `app-bootstrap` lands one level too high and finds no `skills/`
+       there. If several versions come back (each update adds one), take the
+       highest.
+   Read that playbook.md, then read the five SKILL.md files from its grandparent
+   directory, at <version>/skills/*/SKILL.md. Use what they actually say. If you
+   cannot find them, STOP and tell me — do not write the next step from memory.
 
 4. Propose an addition to this repository's CLAUDE.md: a section that references the
    five stage-skills by their exact slash-command names
@@ -212,6 +221,8 @@ The first only refreshes marketplace metadata. On its own it prints `✔ Success
 
 The plugin pins `"version"` in both `plugin.json` and its marketplace entry, so consumers stay on the version they installed until they run `claude plugin update`. **That is the pin** — opt-in upgrade rather than a tag; nothing moves under you in a running session or an untouched install.
 
+**Maintainers, the corollary: every doctrine fix rides a version bump.** Content pushed without bumping `version` in *both* manifests reaches nobody — existing installs run `claude plugin update`, are told they are current, and keep the old doctrine indefinitely. Bump both, then run `claude plugin tag`, which refuses to cut the release unless the two agree.
+
 **Stability:** this is `0.x`. The stage contracts may change between versions — Stage 5 (`e2e-review`) especially, which ships as an explicit stub. Releases are cut with `claude plugin tag`, which creates a `{name}--v{version}` git tag and validates that `plugin.json` and the marketplace entry agree on the version (this repo maintains those two by hand, so that check is worth running).
 
 ### Enable in a project
@@ -282,7 +293,11 @@ ROUND, nothing else.
 
 ## History
 
-Distilled from how the Postmortem chess-trainer project was actually built: a design loop of four adversarial rounds plus a product-coverage audit, then six implementation phases, ~140 findings raised and closed. The six gate-honesty rules in the implementation-loop skill each trace to a specific defect that a green gate certified — most notably a fault-injection gate that killed a process shim while the real work ran uninterrupted in a grandchild, a failure class that recurred in five consecutive phases before the countermeasures went in.
+Distilled from how the Postmortem chess-trainer project was actually built: a design loop of four adversarial rounds plus a product-coverage audit, then six implementation phases, ~140 findings raised and closed.
+
+Of the six gate-honesty rules in the implementation-loop skill, **five trace to a specific defect that a green gate certified**: rule 1 to a fault-injection gate that killed a process shim while the real work ran uninterrupted in a grandchild — a failure class that recurred in five consecutive phases before the countermeasures went in; rule 2 to two wrong detection rules that reached a design doc as "corrections" because someone measured how often they fired rather than whether the hits were right; rule 3 to a pin that passed against the reverted code for an unrelated reason, and to a fixture that made the branch under test unreachable; rule 5 to three inversions that each rendered through a path a gate had already certified; and rule 6 to a backfill projected at 14 hours from isolated per-position costs, which measured ≈23 hours in-pipeline once real work ran through it.
+
+**Rule 4 (subagent verification checklists) is the exception, and is stated as practice rather than as an incident.** Its second half — self-certified "all PASS" is necessary but not sufficient — does have a trace: a checklist item reading "every question ends in ?" passed while the interrogative sentences it was meant to catch ended in a period. The requirement to attach a checklist at all is prophylactic, adopted because vague briefs produced shallow work, not because a specific checklist-less disaster was recorded.
 
 ## License
 

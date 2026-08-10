@@ -38,7 +38,7 @@ A test that injects a crash, a kill, a timeout, a network failure, a partial wri
 
 The canonical failure: a crash-recovery gate spawned the work through a wrapper command, so the signal killed the wrapper while the real work continued uninterrupted in a grandchild process. Every "crash trial" was actually a clean run, and the gate printed PASS. The same failure class recurred in five consecutive phases of the project this methodology comes from, each time in a different disguise.
 
-Concretely: capture evidence that the fault happened (the process really died and at what point; the write really was truncated; the request really did fail), assert on that evidence, and fail the gate when the injection did not land — separately and with a distinct message from the recovery assertion.
+Concretely: capture evidence that **the work itself was interrupted** — its output stops mid-record, its effect is absent, the write really was truncated, the request really did fail — and assert on *that*, not merely that some process received the signal. "A process died" is not evidence: in the anecdote above a process really did die, and it was the wrong one. Anchor on the work, then fail the gate when the injection did not land — separately, and with a distinct message from the recovery assertion, so the two failures are never confused.
 
 ### 2. Detectors report precision AND recall — never how often they fire
 
