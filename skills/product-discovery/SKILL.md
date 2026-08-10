@@ -1,5 +1,6 @@
 ---
-description: Stage 1 — interrogate a product idea in conversation until requirements stabilize, then deliver a requirements doc splitting hard requirements from the negotiable baseline
+name: product-discovery
+description: Use when the user has a product idea but no agreed requirements yet, or asks where to start on a new app — Stage 1 of the app-bootstrap methodology, interrogating the idea until requirements stabilize into a signed-off doc
 argument-hint: "[the product idea, or a path to existing notes]"
 ---
 
@@ -7,7 +8,7 @@ argument-hint: "[the product idea, or a path to existing notes]"
 
 Turn an idea into a requirements artifact the rest of the methodology can be held against. Nothing downstream — no wireframe, no design doc, no line of code — is valid without this.
 
-Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
+Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
 
 **Exit gate: the maintainer signs off the requirements doc.** Not "seems reasonable" — an explicit sign-off. Until then this stage is still running.
 
@@ -34,7 +35,7 @@ When the maintainer challenges a technical choice, **do not debate it on taste.*
 - Wrong response: an argument about why the heuristic is principled.
 - Right response: "Then the question is what fraction of the cases it selects are actually right, and what fraction of the right cases it misses. Let me sample and count both."
 
-Report the measurement, not a defense. A measured answer settles the question in one round and frequently reverses the original position — this pattern is where the largest design corrections come from. Note also that "how often does it fire" is not a measurement of correctness; see the precision-and-recall rule in the implementation-loop skill.
+Report the measurement, not a defense. A measured answer settles the question in one round and frequently reverses the original position — this pattern is where the largest design corrections come from. Note also that "how often does it fire" is not a measurement of correctness; see gate-honesty rule 2 in [`../implementation-loop/SKILL.md`](../implementation-loop/SKILL.md).
 
 ## The deliverable: a requirements doc with two tiers
 

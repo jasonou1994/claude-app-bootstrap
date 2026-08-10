@@ -1,5 +1,6 @@
 ---
-description: Stage 2 — wireframe every surface as one published artifact whose numbered callouts carry binding semantics, and lock it as the project's UI source of truth
+name: wireframes
+description: Use when requirements are signed off and the UI has not been drawn yet, or the user asks what the app will look like — Stage 2 of the app-bootstrap methodology, wireframing every surface as one artifact whose numbered callouts carry binding semantics
 argument-hint: "[path to the signed-off requirements doc]"
 ---
 
@@ -7,10 +8,10 @@ argument-hint: "[path to the signed-off requirements doc]"
 
 Turn the signed-off requirements into a picture of every surface the product has. This stage exists because a design doc written before the UI is known will encode a data model the UI cannot render, and nobody finds out until implementation.
 
-Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
+Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
 
 **Entry gate:** the Stage 1 requirements doc is signed off.
-**Exit gate:** the maintainer signs off the wireframes, and the published artifact URL is recorded in the project's `CLAUDE.md` as the UI source of truth.
+**Exit gate:** the maintainer signs off the wireframes, and the artifact's stable identity — its published URL, or the committed path of the fallback below — is recorded in the project's `CLAUDE.md` as the UI source of truth.
 
 ## Before drawing
 
@@ -48,14 +49,16 @@ Mark any surface exempt from a global control explicitly (`scope-exempt`), becau
 
 Produce the wireframes as **one published artifact** — a single page containing every surface with its callouts, in a stable order, with a heading per surface. One page, one URL, one thing to keep current.
 
-Stamp the page with a decision date: `Locked 2026-03-21`. When a surface changes later, update the artifact in place (same URL), bump the date, and note what changed. The URL is the identity; do not mint a new one for a revision.
+**If artifact publishing is unavailable in this environment**, produce a single self-contained HTML file at a stable committed path in the repository, and use that path everywhere this methodology says "the artifact URL". The requirement is *one page with one stable identity that every downstream brief can open* — not the hosting. Do not silently substitute a scattering of images, a doc per surface, or a description of what the UI would look like.
+
+Stamp the page with a decision date: `Locked 2026-03-21`. When a surface changes later, update the artifact in place (same URL or path), bump the date, and note what changed. That identity is the point; do not mint a new one for a revision.
 
 ## Lock it
 
 On maintainer sign-off:
 
-1. Record the artifact URL in the project's `CLAUDE.md` under a **UI source of truth** line, with the note that the numbered callouts carry binding semantics.
-2. Reference the same URL from the requirements doc.
-3. Give every downstream author and reviewer brief that URL as required reading.
+1. Record the artifact's URL or committed path in the project's `CLAUDE.md` under a **UI source of truth** line, with the note that the numbered callouts carry binding semantics.
+2. Reference the same identity from the requirements doc.
+3. Give every downstream author and reviewer brief that identity as required reading, and confirm they can open it.
 
 From this point, "the UI does X" is settled by the artifact, not by argument.

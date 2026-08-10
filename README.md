@@ -29,7 +29,7 @@ You need Claude Code installed and working. The three commands below get typed i
 **Step 1 — Tell Claude Code where to find this plugin.**
 
 ```
-claude plugin marketplace add jasonou/claude-app-bootstrap
+claude plugin marketplace add jasonou1994/claude-app-bootstrap
 ```
 
 *What you should see:* `✔ Successfully added marketplace: claude-app-bootstrap`. If you get an error about the repository not being found, use the local-folder method: download or clone this repo somewhere, then run the same command with the folder's path instead, e.g. `claude plugin marketplace add ~/code/claude-app-bootstrap`.
@@ -52,7 +52,7 @@ claude plugin list
 
 Now start (or restart) Claude Code in your project: a session picks up newly installed plugins when it starts, so a conversation that was already open won't see it until you begin a new one.
 
-**Alternative — from inside Claude Code:** the same commands exist as *slash commands* at the conversation prompt: `/plugin marketplace add jasonou/claude-app-bootstrap`, then `/plugin install app-bootstrap@claude-app-bootstrap`, then `/plugin list` to confirm. These are interactive — follow the prompts, and if asked to choose a scope, pick **User**.
+**Alternative — from inside Claude Code:** the same commands exist as *slash commands* at the conversation prompt: `/plugin marketplace add jasonou1994/claude-app-bootstrap`, then `/plugin install app-bootstrap@claude-app-bootstrap`, then `/plugin list` to confirm. These are interactive — follow the prompts, and if asked to choose a scope, pick **User**.
 
 The five stages are now available as slash commands. They're named with the plugin's name in front, like this:
 
@@ -68,7 +68,7 @@ Type `/app` and Claude Code will offer to complete them for you, so you don't ha
 
 Your project can have a file called `CLAUDE.md` — a note that Claude reads automatically every time it works in that folder. Adding the methodology to it means Claude follows these stages without you having to remind it.
 
-**Paste this into Claude Code inside your project:**
+**Paste this into Claude Code inside your project.** It is long and multi-line: paste the whole block in one go. Most terminals handle a bracketed paste correctly, but if yours submits at the first newline and sends only the opening sentence, press **Esc** to clear, then either paste it into an editor and use `/paste`, or save it to a file and tell Claude to read that file.
 
 ```text
 I've installed the `app-bootstrap` Claude Code plugin and I want this repository set up to use it.
@@ -80,7 +80,7 @@ Do the following, in order:
    through installing it one step at a time — tell me exactly what to type in my
    terminal, wait for me to tell you what I saw, and only then give me the next
    step. The install steps are: add the marketplace (`claude plugin marketplace add
-   jasonou/claude-app-bootstrap`, or a local folder path if I have the repo
+   jasonou1994/claude-app-bootstrap`, or a local folder path if I have the repo
    cloned), then `claude plugin install app-bootstrap@claude-app-bootstrap`, then
    confirm with `claude plugin list`. Remind me the skills only appear in sessions
    started after the install. Do not continue to step 2 until the plugin is
@@ -91,8 +91,13 @@ Do the following, in order:
    is and how it's actually built. I want the next step tailored to THIS repo, not
    generic boilerplate.
 
-3. Read the plugin's own docs before writing anything: its five skills under
-   `skills/*/SKILL.md` and `docs/playbook.md`. Use what they actually say.
+3. Read the plugin's own docs before writing anything — NOT from this repository,
+   which does not contain them. Find the installed plugin first: search under
+   ~/.claude/plugins/ for a directory named `app-bootstrap` that contains
+   `skills/` and `docs/playbook.md` (e.g. `find ~/.claude/plugins -type d -name
+   app-bootstrap`). Then read its five `skills/*/SKILL.md` files and its
+   `docs/playbook.md` from there, and use what they actually say. If you cannot
+   find them, STOP and tell me — do not write the next step from memory.
 
 4. Propose an addition to this repository's CLAUDE.md: a section that references the
    five stage-skills by their exact slash-command names
@@ -170,23 +175,35 @@ The marketplace entry uses `"source": "./"`, the documented pattern for a reposi
 
 ## Install
 
-### From a local path
-
-```
-/plugin marketplace add ./claude-app-bootstrap
-/plugin install app-bootstrap@claude-app-bootstrap
-```
-
-The path may be any directory containing `.claude-plugin/marketplace.json` (absolute or relative), or a direct path to the `marketplace.json` file itself.
+Both forms exist as terminal commands (`claude plugin …`) and as slash commands (`/plugin …`) inside a session. The terminal form is non-interactive and is what the step-by-step guide above uses.
 
 ### From GitHub
 
 ```
-/plugin marketplace add jasonou/claude-app-bootstrap
-/plugin install app-bootstrap@claude-app-bootstrap
+claude plugin marketplace add jasonou1994/claude-app-bootstrap
+claude plugin install app-bootstrap@claude-app-bootstrap
 ```
 
-Replace `jasonou` with the owner the repository is actually hosted under. Other git hosts take the full URL including `https://` and the `.git` suffix, e.g. `/plugin marketplace add https://gitlab.com/you/claude-app-bootstrap.git`.
+Other git hosts take the full URL including the `https://` prefix and the `.git` suffix, e.g. `claude plugin marketplace add https://gitlab.com/you/claude-app-bootstrap.git`.
+
+### From a local path
+
+```
+claude plugin marketplace add ./claude-app-bootstrap
+claude plugin install app-bootstrap@claude-app-bootstrap
+```
+
+The path may be any directory containing `.claude-plugin/marketplace.json`, absolute or relative — use `.` if you are standing inside the repository itself — or a direct path to the `marketplace.json` file.
+
+### Updating
+
+```
+claude plugin marketplace update claude-app-bootstrap
+```
+
+Then start a new session to pick up the new version. The plugin pins `"version"` in both `plugin.json` and its marketplace entry, so consumers only move when that field is bumped.
+
+**Stability:** this is `0.x`. The stage contracts may change between versions — Stage 5 (`e2e-review`) especially, which ships as an explicit stub. No release tags have been cut yet, so there is currently nothing to pin to; a team that needs doctrine which cannot move under them should vendor the repo and add it from a local path.
 
 ### Enable in a project
 
@@ -198,7 +215,7 @@ Replace `jasonou` with the owner the repository is actually hosted under. Other 
     "claude-app-bootstrap": {
       "source": {
         "source": "github",
-        "repo": "jasonou/claude-app-bootstrap"
+        "repo": "jasonou1994/claude-app-bootstrap"
       }
     }
   },
@@ -214,10 +231,21 @@ Collaborators are prompted to install it when they trust the repository folder. 
 
 ```
 claude --plugin-dir ./claude-app-bootstrap
-claude plugin validate ./claude-app-bootstrap
+claude plugin validate ./claude-app-bootstrap/.claude-plugin/plugin.json
+claude --plugin-dir ./claude-app-bootstrap plugin details app-bootstrap
 ```
 
-`--plugin-dir` loads the plugin without installing it and takes precedence over an installed copy of the same name for that session. Edits to skill files are picked up at the next session start; `claude plugin validate` catches manifest and frontmatter errors without starting a session.
+`--plugin-dir` loads the plugin without installing it and takes precedence over an installed copy of the same name for that session. Edits to skill files are picked up at the next session start.
+
+**Which check covers what** — verified against Claude Code 2.1.226 by injecting a YAML frontmatter defect into a skill and re-running each form:
+
+| Command | What it actually reads |
+| :-- | :-- |
+| `claude plugin validate .` (repo root) | **Marketplace manifest only.** Because this repo contains `.claude-plugin/marketplace.json`, `validate` resolves it as a marketplace and never opens `skills/`. It printed `✔ Validation passed` with a broken skill on disk. |
+| `claude plugin validate .claude-plugin/plugin.json` | Plugin manifest **and every skill's frontmatter**. This is the form that caught the injected defect: `❯ frontmatter: YAML frontmatter failed to parse`. Skill lines print only on error. |
+| `claude --plugin-dir . plugin details app-bootstrap` | What actually loads at runtime — the component inventory (`Skills (5) …`) and per-skill token cost. The only check that proves all five skills load. |
+
+The trap worth knowing: a green `claude plugin validate .` on this repo means two JSON files parse. It is not evidence about the skills. A frontmatter error is otherwise silent — the runtime loads the skill with *empty metadata*, dropping its description, so it simply stops surfacing.
 
 ## Referencing the stages from a project's CLAUDE.md
 

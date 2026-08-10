@@ -1,15 +1,18 @@
 ---
-description: Stage 3 — run the adversarial design loop with a persistent author and an adversarial reviewer in rounds, including the interface-consumer exercise, until a plain SHIP
+name: design-loop
+description: Use when a feature is large enough to need a design doc before any code gets written — Stage 3 of the app-bootstrap methodology, a persistent author and an adversarial reviewer running rounds, including the interface-consumer exercise, until a plain SHIP
 argument-hint: "[topic, or path to an existing design doc]"
 ---
 
 # Stage 3 — The design loop
 
-Run the full adversarial design-review workflow for the design the maintainer named when invoking this stage (their invocation arguments, if any: **$ARGUMENTS** — if that reads as a literal placeholder, ask what design this loop is for before proceeding).
+Run the full adversarial design-review workflow for: **$ARGUMENTS**
+
+If nothing was named above, ask the maintainer which design this loop is for before launching anything.
 
 Use it for any design large enough to deserve a design doc — especially one that ships interface sketches. **The loop does not exit until the adversarial reviewer's verdict is a plain SHIP**, and implementation never begins until the maintainer then approves the shipped design.
 
-Shared doctrine — read it before launching anything: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
+Shared doctrine — read it before launching anything: [`../../docs/playbook.md`](../../docs/playbook.md).
 
 **Entry gate:** signed-off requirements (Stage 1) and locked wireframes (Stage 2).
 **Exit gate:** a plain SHIP verdict, then a separate maintainer approval gate.
@@ -36,7 +39,7 @@ The brief must include:
 - **Deliverable**: one design doc at a stated scratchpad path (promoted into the docs tree only after SHIP + maintainer approval).
 - **The R-list as binding**; the baseline as a starting point with a required **Departures** section (baseline position / author position / rationale, per departure).
 - **A ground-truth reading list** of the actual code and artifacts, with the rule: **the source wins over the brief's characterizations; discrepancies get reported.**
-- **The wireframe artifact URL**, with the note that numbered callouts are binding.
+- **The wireframe artifact URL** — or, where artifact publishing was unavailable at Stage 2, the committed path of the single self-contained wireframe page — with the note that numbered callouts are binding. Confirm the author agent can actually open it; a brief that points at an unreachable artifact silently degrades the binding-callout mechanism to whatever the author remembers.
 - **Required structure**: problem statement; first principles with wire-level examples; the design; interface sketches; per-consumer instantiation grounded with `file:line` refs; a migration/build plan with a **named verification gate per phase**; an error-copy table if anything is user-facing; telemetry; **Concerns** (honest open questions, each with a recommendation); **Departures**.
 - **A filled-in completion checklist** returned with the report (self-certified PASS is necessary, not sufficient).
 

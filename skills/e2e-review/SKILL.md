@@ -1,5 +1,6 @@
 ---
-description: Stage 5 (STUB) — end-to-end journey testing of the running app through a real browser, with journeys derived from the wireframes
+name: e2e-review
+description: Use when every implementation phase has shipped and the running app needs end-to-end journey testing in a real browser — Stage 5 of the app-bootstrap methodology, currently an unvalidated STUB
 argument-hint: "[journey name, or 'all']"
 ---
 
@@ -11,7 +12,7 @@ argument-hint: "[journey name, or 'all']"
 >
 > Until then: use it as a checklist to think with, expect to improvise, and write down what actually happened so the next version of this file is real.
 
-Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
+Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
 
 **Entry gate:** every implementation phase has SHIPped and the app runs locally.
 **Exit gate (intended):** every journey defined from the wireframes passes against the running app, and the adversarial reviewer's verdict on the journey results is a plain SHIP.
@@ -22,7 +23,7 @@ Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships in
 
 ### 1. Derive journeys from the wireframes
 
-The Stage 2 artifact is the journey source. A journey is a path a real user takes across surfaces, not a single-screen check. Derive them systematically rather than by intuition:
+The Stage 2 artifact is the journey source (its URL, or its committed path where Stage 2 fell back to a self-contained page). A journey is a path a real user takes across surfaces, not a single-screen check. Derive them systematically rather than by intuition:
 
 - one journey per primary user goal, start to finish;
 - one journey per empty state — the day-one experience is the one nobody tests and everybody sees first;
@@ -41,7 +42,7 @@ Per journey, capture: the steps taken, a screenshot at each assertion point, the
 
 The journey run is authored work and gets reviewed like any other: a fresh adversarial reviewer, briefed that the journeys contain defects — including defects *in the journeys themselves*. The highest-value sweep here is the same as everywhere else in this methodology: **find a journey that would pass even if the behavior it claims to check were broken.** A screenshot taken before the state settled, an assertion on text that appears on every page, a journey that never reached the surface it names.
 
-Gate-honesty rules 1, 3 and 5 from the implementation-loop skill apply unchanged: an injected-failure journey must prove the failure landed; a journey is believed only once the defect it claims to catch has been introduced and observed to fail it; the reviewer hunts rather than validates.
+Gate-honesty rules 1, 3 and 5 from [`../implementation-loop/SKILL.md`](../implementation-loop/SKILL.md) apply unchanged — read them there rather than working from this summary: an injected-failure journey must prove the failure landed; a journey is believed only once the defect it claims to catch has been introduced and observed to fail it; the reviewer hunts rather than validates.
 
 ---
 

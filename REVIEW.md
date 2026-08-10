@@ -1,0 +1,269 @@
+# Adversarial review — claude-app-bootstrap
+
+Rounds stack **newest-first**.
+
+---
+
+# Round 1 — 2026-08-09 (commit `823ade1`)
+
+Scope: full repo. Sources of truth for the fidelity diff: `/Users/jasonou/code/chess/.claude/commands/design-review.md`, `/Users/jasonou/code/chess/.claude/docs/subagent-loop-playbook.md`, `/Users/jasonou/code/chess/CLAUDE.md` (Agent Workflow Policy), `/Users/jasonou/code/chess/docs/HANDOFF.md` §5. Chess repo read-only; no edits made anywhere.
+
+**Verdict: ONE MORE ROUND** (1 BLOCKER, 6 MAJOR, 7 MINOR, 4 NIT).
+
+---
+
+## Findings
+
+### BLOCKER
+
+#### B1 — The novice's very first command cannot work: `jasonou/…` is an unflagged placeholder pointing at a repo that does not exist
+
+**CONFIRMED.** `README.md:32`, `README.md:88`, `.claude-plugin/marketplace.json:6`.
+
+```
+$ git -C /Users/jasonou/code/claude-app-bootstrap remote -v
+(no output — no remote configured)
+```
+
+`README.md:32` presents, as Step 1 of the non-technical guide:
+
+```
+/plugin marketplace add jasonou/claude-app-bootstrap
+```
+
+Part 1 never says this is a placeholder. The disclaimer exists — but only at `README.md:193`, deep in Part 2, which line 11 explicitly tells the novice to **skip**. The onboarding prompt repeats the same unflagged string at `README.md:88`, and `marketplace.json:6` hardcodes `https://github.com/jasonou` as the owner URL.
+
+**Failure scenario.** A reader follows Part 1 verbatim. Step 1 errors. The recovery text at line 35 ("If you get an error about the repository not being found…") frames this as an edge case rather than the certain outcome, and its fallback assumes the reader has already "download[ed] or clone[d] this repo somewhere" — which the novice, who was told to start by typing a marketplace URL, has not. The guide's own promise ("every command exactly typeable") fails at command #1.
+
+**Minimal fix.** Either (a) publish the repo and confirm the owner, or (b) in Part 1 Step 1 lead with the local-path form as the primary instruction and mark the GitHub form `<your-github-owner>/claude-app-bootstrap` with an inline "replace this" note — in all three locations, plus `marketplace.json`'s `owner.url`.
+
+---
+
+### MAJOR
+
+#### M1 — The onboarding prompt orders Claude to run a slash command, then hard-blocks on the result
+
+**CONFIRMED.** `README.md:84-91`.
+
+> `1. Check the plugin is actually installed and enabled: run `/plugin list` (or the equivalent check) …  Do not continue to step 2 until the plugin is confirmed installed.`
+
+Claude has no tool that executes slash commands — `/plugin list` is typed by the *user*, in the UI. `/plugin` is confirmed to be a UI command, not a CLI one:
+
+```
+$ strings claude-2.1.226 | grep '^/plugin list'
+/plugin list [--enabled|--disabled] - List installed plugins
+```
+
+The hedge "(or the equivalent check)" is exactly the kind of underspecification the playbook itself bans (§4, "Briefs are self-contained… 'Based on your findings, do X' pushes synthesis onto the agent").
+
+**Failure scenario.** The model either (a) hallucinates having run it and reports a fabricated result, (b) shells out to a nonexistent `claude plugin list` variant in the user's project and reports confusing output, or (c) stalls on an unsatisfiable gate it was told not to pass. All three land on a novice who cannot diagnose any of them.
+
+**Minimal fix.** Replace with a check the agent can actually perform, e.g.: *"Check your own available-skills list for entries named `app-bootstrap:product-discovery` … `app-bootstrap:e2e-review`. If they are absent, tell me and walk me through installing…"*. Optionally add the working non-interactive command `claude plugin details app-bootstrap` (verified working — see "What it got right", G5).
+
+#### M2 — The onboarding prompt tells Claude to read plugin files by bare relative path, from the wrong directory
+
+**CONFIRMED.** `README.md:98-99`.
+
+> `3. Read the plugin's own docs before writing anything: its five skills under `skills/*/SKILL.md` and `docs/playbook.md`.`
+
+The onboarding prompt is pasted *inside the user's project*, so cwd is the user's repo. `skills/*/SKILL.md` and `docs/playbook.md` resolve there and will not exist. The installed plugin lives under `~/.claude/plugins/` (cache or marketplaces subtree), and the prompt gives no way to find it.
+
+**Failure scenario.** Glob returns nothing; the model proceeds to step 4 and writes the CLAUDE.md section from its priors rather than from the skills — which is precisely the "generic boilerplate" step 2 was written to prevent. Worse: it fails *silently*, because step 3 has no verification of its own.
+
+**Minimal fix.** Replace with an instruction that has a real path: *"Invoke each of the five skills' descriptions via your skill listing, or locate the installed plugin by searching `~/.claude/plugins/` for a directory named `app-bootstrap`, and read its `skills/*/SKILL.md` and `docs/playbook.md` from there. If you cannot find them, stop and tell me."*
+
+#### M3 — Doctrine contradiction: who edits the artifact between rounds
+
+**CONFIRMED.** `docs/playbook.md:49` vs `skills/design-loop/SKILL.md:69-71`.
+
+Playbook §3 item 5 is scoped to *"Every reviewer brief carries all six of these"* (`playbook.md:43`) and states:
+
+> `5. **Scope of authority.** Reviewers apply line-level fixes in place (never hand back a diff)…`
+
+But the design loop specifies the opposite ownership:
+
+> `- Revisions are **in-place edits to the one design doc**` (`design-loop:69`) — by the author, per the revision brief at `:70`
+> `- The reviewer's next round verifies dispositions **against the revised text, not the author's claims**` (`design-loop:71`)
+
+The source is unambiguous here and the plugin lost the distinction: `subagent-loop-playbook.md:18` scopes fix-in-place to the *implementation* loop's review subagent, while `design-review.md:48-50` gives design-doc revision to the author. The plugin promoted an implementation-loop-only rule into the universal reviewer template.
+
+**Failure scenario.** A design-loop reviewer briefed with the §3 template edits the design doc directly. The persistent author (playbook §5) then revises the same file from its own stale mental model, silently clobbering or duplicating the reviewer's edits. Round 3 then has the reviewer "verifying dispositions against the revised text" of text it wrote itself — Fixer ≠ judge (§1) violated by the playbook's own template.
+
+**Minimal fix.** Qualify `playbook.md:49`: *"In the implementation loop, reviewers apply line-level fixes in place… In the design loop the author owns every edit to the design doc; the reviewer only reports."*
+
+#### M4 — The model requirement was dropped entirely
+
+**CONFIRMED (dropped clause).** Source: `design-review.md:30` "*Phase 2 — Adversarial reviewer (**Opus**, background, keep open)*"; `subagent-loop-playbook.md:17-18` "*Author subagent (**Opus**)*" / "*Review subagent (**Opus**, fresh context)*"; chess `CLAUDE.md` "*Run long-running **opus** subagents in the background*".
+
+```
+$ grep -rniE "\b(opus|sonnet|haiku|strongest model|model)\b" skills/ docs/ README.md | grep -viE "model that|data model|consistency model"
+EXIT=1   # zero matches
+```
+
+The plugin contains **no model guidance anywhere**. Every other operational parameter of the loop survived the port (background execution, persistence, agent type `general-purpose`) — this one did not.
+
+**Failure scenario.** A user configures a cheap default model for subagents (or the harness picks one). The adversarial reviewer, whose entire value is finding the class of defects that "survive every mechanical gate" (`playbook.md:52`), runs on a model that cannot trace a grandchild-process kill through a test harness. It returns SHIP. Every gate in the methodology is now a rubber stamp, and nothing in the plugin tells anyone this is what went wrong.
+
+**Minimal fix.** Add to `playbook.md` §5 or §8: *"Author and reviewer agents run on the strongest model available in the environment. The adversarial reviewer especially — its entire yield is the defect classes that mechanical gates miss, and that yield is model-dependent."*
+
+#### M5 — Stage 2 depends on an artifact-publishing capability it never checks for, and Stages 3–4 hard-depend on the resulting URL
+
+**CONFIRMED.** `skills/wireframes/SKILL.md:47-59`, consumed at `skills/design-loop/SKILL.md:39` and `skills/implementation-loop/SKILL.md:86`.
+
+The wireframes skill mandates *"one **published** artifact… One page, **one URL**"* (`:49`), and its exit gate (`:13`) requires *"the published artifact **URL** is recorded in the project's `CLAUDE.md`"*. Downstream, the design-loop author brief requires *"**The wireframe artifact URL**, with the note that numbered callouts are binding"* (`design-loop:39`) and every implementation author brief requires *"the wireframe artifact URL for anything user-facing"* (`implementation-loop:86`).
+
+Nothing checks that artifact publishing is available. Note the contrast: `wireframes:17` *does* defensively guard the `frontend-design` skill (*"if it is available in this environment"*) — the author knew to do this and did not apply it to the load-bearing dependency.
+
+**Failure scenario.** A user on a Claude Code install without artifact publishing reaches Stage 2. The model either invents a URL, or produces a local HTML file and calls it "the artifact" — after which Stage 3's brief points at a path the design author's sandbox cannot open, and the binding-callout mechanism (the thing that makes the whole stage load-bearing) silently degrades to "whatever the implementer remembered".
+
+**Minimal fix.** In `wireframes:47`, add a fallback: *"If artifact publishing is unavailable, produce a single self-contained HTML file at a stable committed path and use that path everywhere this doc says 'URL'. The requirement is one page, one stable identity — not the hosting."* Mirror the wording in `design-loop:39` and `implementation-loop:86`.
+
+#### M6 — The README instructs the novice to ignore the one signal that would reveal a failed install
+
+**CONFIRMED (claim is false).** `README.md:53`.
+
+> *"Don't worry if it says `0 skills` — that counter doesn't cover this plugin's kind of skills."*
+
+This plugin's components are **exclusively** skills. Verified against the running build:
+
+```
+$ claude --plugin-dir /Users/jasonou/code/claude-app-bootstrap plugin details app-bootstrap
+Component inventory
+  Skills (5)  design-loop, e2e-review, implementation-loop, product-discovery, wireframes
+  Agents (0)   Hooks (0)   MCP servers (0)   LSP servers (0)
+```
+
+There is no other "kind of skill" here for the counter to be missing. If a reload genuinely reports `0 skills` for this plugin, the plugin did not load — which is exactly the failure the novice needs to catch at Step 3.
+
+**Failure scenario.** Install silently fails (untrusted workspace, stale cache, wrong scope). Reload prints `0 skills`. The reader, per the README, ignores it, proceeds to Step 4, types `/app-bootstrap:product-discovery`, gets "unknown command", and has no idea the README already told them to ignore the diagnosis.
+
+**Minimal fix.** Invert it: *"You should see 5 skills reloaded. If it says `0 skills`, the plugin did not load — go back to Step 2."*
+
+---
+
+### MINOR
+
+#### m1 — Skill descriptions carry no trigger language and open with a meaningless ordinal
+
+**CONFIRMED.** All five `SKILL.md` frontmatter `description:` fields, e.g. `product-discovery:2` — *"Stage 1 — interrogate a product idea in conversation until requirements stabilize…"*.
+
+In a flat skill listing (which is how the model sees them — verified: they surface as `app-bootstrap:product-discovery` … `app-bootstrap:e2e-review`), "Stage 1" has no referent. More importantly, none of the five say **when to use it**. Every high-quality skill description in the installed corpus is trigger-shaped ("*When the user wants to…*", "*Also use when the user mentions…*"). These are capability descriptions, so the model will rarely select them autonomously; they work only when typed as slash commands.
+
+**Fix.** Prefix each with its trigger, e.g. *"Use when the user has a product idea and no requirements doc yet — Stage 1 of the app-bootstrap methodology: interrogate the idea until…"*.
+
+#### m2 — Unlabeled invented number, in violation of the plugin's own rule 6
+
+**CONFIRMED.** `docs/playbook.md:71` vs `skills/implementation-loop/SKILL.md:77`.
+
+> playbook:71 — *"Retire it and start a fresh author only when its context approaches exhaustion (**roughly 500k tokens**)…"*
+> implementation-loop:77 — *"Where a number is currently an estimate, **label it as one, in the artifact, at the point of use**."*
+
+`500k` appears in neither `design-review.md` nor `subagent-loop-playbook.md` nor the chess `CLAUDE.md` — it is new to this port. It is also ambiguous (cumulative tokens consumed? context occupancy? — the latter is impossible for most windows) and unmeasured, which is exactly the "estimate presented as fact" that gate-honesty rule 6 exists to stop. The playbook breaking its own rule is a credibility problem for a doc whose whole authority is "these rules exist because a defect got through without them".
+
+**Fix.** *"…only when its context approaches exhaustion. (No measured threshold exists yet; treat 'the author is starting to lose earlier rounds' as the signal and record the number when you measure it.)"*
+
+#### m3 — Three general rules from the chess `CLAUDE.md` Agent Workflow Policy were dropped without replacement
+
+**CONFIRMED (dropped clauses).** None of these is project-specific; all three generalize cleanly and none appears in the plugin (`grep` over `skills/ docs/ README.md`):
+
+1. *"Do not commit or push unless explicitly requested."* — most consequential for this plugin, where Stage 4 has author agents writing files across a whole repo unattended.
+2. *"Do NOT delegate test runs to subagents for concurrency."* — a specific, hard-won anti-pattern; the plugin's §7 delegation economics discusses briefing-cost vs edit-cost but never this case.
+3. *"Prefer editing existing files over creating new ones."*
+
+**Fix.** Add all three to `playbook.md` §4 (subagent discipline) or a new "coordinator hygiene" bullet set in §7.
+
+#### m4 — Cross-skill references with no resolvable path
+
+**CONFIRMED.** `skills/product-discovery/SKILL.md:37` (*"see the precision-and-recall rule in the implementation-loop skill"*) and `skills/e2e-review/SKILL.md:44` (*"Gate-honesty rules 1, 3 and 5 from the implementation-loop skill apply unchanged"*).
+
+Every playbook reference in this repo is a working relative link; these two are bare prose. A Stage-1 or Stage-5 reader has not loaded `implementation-loop` and is given no path to it.
+
+**Failure scenario.** The e2e reviewer, told that "rules 1, 3 and 5 apply unchanged", cannot read rules 1, 3 and 5 — and either invents them or drops them. Given that §44 calls this "the highest-value sweep", losing it defeats the stage.
+
+**Fix.** Link them (`../implementation-loop/SKILL.md`), or better — since the playbook already exists for exactly this purpose (`playbook.md:3`, *"Each skill points here rather than restating these rules"*) — move the six gate-honesty rules into `docs/playbook.md` as §10 and have implementation-loop point at them like everything else.
+
+#### m5 — `claude plugin validate` is presented as verification but covers none of the content
+
+**CONFIRMED by running it.**
+
+```
+$ claude plugin validate .
+Validating marketplace manifest: …/.claude-plugin/marketplace.json
+✔ Validation passed
+
+$ claude plugin validate . --strict
+Validating marketplace manifest: …/.claude-plugin/marketplace.json
+✔ Validation passed
+
+$ claude plugin validate .claude-plugin/plugin.json
+Validating plugin manifest: …/.claude-plugin/plugin.json
+✔ Validation passed
+```
+
+Note what it printed: *manifest*. It never opened `skills/`. `README.md:221` lists it under "Develop against it locally" with no caveat, implying a green check means the plugin is sound. It means two JSON files parse.
+
+**Fix.** One line at `README.md:222`: *"`validate` checks the manifests only — it does not read `skills/`. Use `claude plugin details app-bootstrap` (with `--plugin-dir`) to confirm all five skills actually load."*
+
+#### m6 — No version or update story
+
+**CONFIRMED.** `.claude-plugin/marketplace.json:9-15` has no `version` field on the plugin entry; `README.md` never mentions `/plugin marketplace update`, `claude plugin tag`, or how a consumer pins or upgrades. `plugin.json` carries `0.1.0` but nothing surfaces it to a user and nothing states a stability policy — notable when one of five stages ships as an explicit STUB.
+
+**Failure scenario.** A team wires the plugin into `.claude/settings.json` per `README.md:197-213`. The upstream repo changes the SHIP/ONE-MORE-ROUND semantics. Collaborators are on silently divergent doctrine with no version to compare and no documented refresh command.
+
+**Fix.** Add `"version": "0.1.0"` to the marketplace entry, a one-line "Updating" subsection (`/plugin marketplace update claude-app-bootstrap` then `/reload-plugins`), and a sentence noting 0.x means the stage contracts may change — Stage 5 especially.
+
+#### m7 — The universal reviewer template demands artifacts that only exist in the design loop
+
+**CONFIRMED.** `docs/playbook.md:50`, scoped by `:43` (*"Every reviewer brief carries all six of these"*).
+
+> `6. **Ledger obligations.** A requirement scorecard (R1..Rn…), **a verdict per Departure (uphold / reverse / amend)**…`
+
+"Departures" is a Stage-1/Stage-3 construct (`product-discovery:47`, `design-loop:37`). An implementation-phase reviewer and an e2e-journey reviewer have no Departures section to adjudicate. In the source this obligation lived only in `design-review.md:37`, correctly scoped.
+
+**Fix.** Mark it conditional: *"…and, where the artifact under review has a Departures section, a verdict per Departure."*
+
+---
+
+### NIT
+
+- **n1 — `argument-hint` is a command-only frontmatter field.** All five SKILL.md files carry it (e.g. `design-loop:3`). Across all 60 installed skills on this machine the frontmatter keys are `name` (60), `description` (60), `metadata` (54), `allowed-tools` (3), `license` (1) — `argument-hint` appears **only** in `commands/*.md`. Harmless (the runtime tolerates it, and `$ARGUMENTS` interpolation *does* work in skills — verified, see G3), but non-conventional. Relatedly, `name:` is absent from all five while 60/60 installed skills carry it; the directory name is used as fallback, so this works, but it is a deviation.
+- **n2 — `README.md:180`** gives `/plugin marketplace add ./claude-app-bootstrap`, which is wrong if the reader is standing inside the repo (should be `.`). Line 184 explains the general rule, but the copy-pasteable line is the one people paste.
+- **n3 — `plugin.json` has no `homepage` or `repository` field.** `--strict` tolerates it; it means an installed user has no path back to the source.
+- **n4 — The onboarding prompt is a 45-line paste presented as "copy and paste this" (`README.md:73-124`)** with no note about multi-line paste behavior in a terminal prompt. A novice pasting this may submit on the first newline and send only `I've installed the app-bootstrap Claude Code plugin…`. Worth one sentence.
+
+---
+
+## What it got right
+
+- **G1 — The interface-consumer exercise survived intact, rationale and all.** `design-loop:51-55` preserves the mechanism, the "why reading isn't enough" argument, *and* the concrete BLOCKER anecdote from `design-review.md:40`. This was the single clause most at risk in a generalization pass and it came through stronger (generalized off "TypeScript" without losing force).
+- **G2 — It resolved a real ambiguity in the source.** `design-review.md:32` says the reviewer is *continued across all rounds*; `subagent-loop-playbook.md:18` says the review subagent has *fresh context*. The source never reconciles these. `playbook.md:72-73` does, cleanly and correctly: *"The reviewer is persistent across rounds within a loop… A fresh reviewer starts each new loop or phase. Fresh eyes per unit of work; continuity within it."* That is an improvement on the source, not a port.
+- **G3 — The mechanics actually work.** Verified against the running build (2.1.226) with `--plugin-dir`: all five skills load and namespace correctly (`app-bootstrap:product-discovery` … `app-bootstrap:e2e-review`); `$ARGUMENTS` **does** interpolate in a skill body (probe with `args='ZZTESTARGZZ'` returned `Run the full adversarial design-review workflow for a major design: **ZZTESTARGZZ**`, with no literal `$ARGUMENTS` remaining); and the relative playbook link resolves — the runtime prepends `Base directory for this skill: /…/claude-app-bootstrap/skills/design-loop`, so `../../docs/playbook.md` → `/…/claude-app-bootstrap/docs/playbook.md`, and the Read succeeded. Path arithmetic checks out: `skills/design-loop` → `..` = `skills/` → `../..` = repo root → `docs/playbook.md`. ✓
+- **G4 — The README's UI strings are verbatim-accurate.** `Plugin is now active.`, `Run /reload-plugins to activate.`, `/reload-plugins --force`, `/plugin list`, `/plugin marketplace add <path/url>` all appear verbatim in the 2.1.226 binary. Someone checked rather than guessed. (M6 is the one exception, and it is a claim *about* output rather than a quotation of it.)
+- **G5 — Zero chess leakage in the skills.** Receipt:
+  ```
+  $ grep -rniE "\b(chess|stockfish|fsrs|pgn|fen|elo|lichess|happylamp|multipv|blunder|opening line|postmortem|dynamodb|localstack|lerna|fastify|zustand|jest|npm run|nvm)\b" skills/
+  EXIT=1   # no matches
+  ```
+  The only domain references anywhere are the two deliberate provenance notes (`README.md:248`, `docs/playbook.md:127`), which are the right call — they are what makes the rules credible.
+- **G6 — The six gate-honesty rules are faithful to `HANDOFF.md` §5 and generalized without dilution.** Rule 1's `npx`-grandchild anecdote, the "five consecutive phases" count (Phases 2–6 — checked), rule 2's "two wrong rules reached the design doc as corrections", rule 3's vacuous-pin case, rule 5's three inversions — every specific traces to the source and every one survived the generalization with its teeth in. Rule 3's added paragraph on the fixture that makes the branch unreachable is a correct lift of the Phase 6 case.
+- **G7 — The STUB banner on `e2e-review` is exemplary honesty.** `e2e-review:8-12` refuses to let the unvalidated stage masquerade as methodology, and §"Open questions" names five real ones. This is what rule 6 (label estimates as estimates) looks like applied to a whole skill.
+- **G8 — The CLAUDE.md-preservation half of the onboarding prompt is genuinely defensive.** `README.md:114-121` — preserve everything, no-CLAUDE.md branch, show the exact diff, wait for approval, don't write until told yes. Two of the four defensive requirements are met well; M1 and M2 are what breaks the other two.
+
+---
+
+## Completion checklist
+
+| # | Item | Status |
+| :-- | :-- | :-- |
+| 1 | Fidelity diff against all three source docs, per-clause receipts for dropped/weakened clauses | **PASS** — `design-review.md` diffed clause by clause (Phase 0–Exit; drops: M4 model requirement, provenance line — the latter deliberate and covered in README History); `subagent-loop-playbook.md` diffed (M3 scope inversion found; §5 reconciliation noted as an improvement, G2); chess `CLAUDE.md` Agent Workflow Policy diffed (m3, three dropped general rules); `HANDOFF.md` §5 diffed against the six gate-honesty rules (G6, faithful). |
+| 2 | `claude plugin validate` + `--strict` run and quoted; playbook path resolution verified by actual arithmetic | **PASS** — all three invocations quoted in m5; both passed, and the output proves they cover manifests only. Path arithmetic done and confirmed empirically against the runtime's `Base directory` line (G3). |
+| 3 | README walked step by step as a novice; every command checked for typeability; onboarding prompt assessed against its four defensive requirements | **PASS** — Steps 1–4 walked; Step 1 fails (B1), Step 3's guidance is inverted (M6), Steps 2 and 4 check out against verbatim binary strings (G4). Onboarding prompt: self-contained ✗ (M2), defensive re existing CLAUDE.md ✓ (G8), shows diff ✓, waits for approval ✓; plus an unperformable instruction (M1) and a paste-mechanics gap (n4). |
+| 4 | Chess-leakage grep over `skills/` with pattern and result shown | **PASS** — pattern and `EXIT=1` result quoted in G5; a broader sweep over `docs/` and `README.md` surfaced only the two intentional provenance lines. |
+| 5 | `REVIEW.md` written to the repo, newest-first, identical to the returned report | **PASS** — this file; Round 1 is the only round and the newest-first convention is stated at the top. |
+| 6 | Verdict is exactly one of {SHIP, ONE MORE ROUND} | **PASS** — see below. |
+
+---
+
+## Verdict
+
+**ONE MORE ROUND**

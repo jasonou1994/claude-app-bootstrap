@@ -1,5 +1,6 @@
 ---
-description: Stage 4 — implement an approved design in phases, one author-plus-adversarial-reviewer loop per phase, under the six gate-honesty rules
+name: implementation-loop
+description: Use when an approved design is ready to build, or the user asks to start implementing a phase — Stage 4 of the app-bootstrap methodology, phased implementation with one author-plus-adversarial-reviewer loop per phase under the six gate-honesty rules
 argument-hint: "[path to the approved design doc, or the phase to run]"
 ---
 
@@ -7,7 +8,7 @@ argument-hint: "[path to the approved design doc, or the phase to run]"
 
 Implement an approved design, **one phase at a time**, each phase its own author → adversarial reviewer loop that runs until a plain SHIP.
 
-Shared doctrine: `${CLAUDE_PLUGIN_ROOT}/docs/playbook.md` (the playbook ships inside this plugin; that variable resolves to the plugin's install directory at runtime).
+Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
 
 **Entry gate:** the design has SHIPped *and* the maintainer has approved it. Not one or the other.
 **Exit gate per phase:** a plain SHIP from that phase's adversarial reviewer, plus the coordinator's own independent spot-check.
@@ -83,7 +84,7 @@ Where a number is currently an estimate, label it as one, in the artifact, at th
 Author brief:
 
 - the approved design doc, with the phase's section named;
-- the wireframe artifact URL for anything user-facing (callouts are binding);
+- the wireframe artifact URL for anything user-facing — or its committed path, where Stage 2 fell back to a self-contained page — with callouts binding, and confirmed reachable by the agent you are briefing;
 - the ground-truth rule: the code wins over the brief's characterizations; report discrepancies;
 - the phase's named verification gate, plus rules 1, 3 and 6 above as binding constraints on how that gate is written;
 - project conventions, by pointer to the project's `CLAUDE.md` — never restated;
