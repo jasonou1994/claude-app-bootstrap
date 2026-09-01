@@ -6,13 +6,23 @@ Read this once at the start of a stage. Everything below is binding unless the m
 
 ---
 
-## 1 · Two loops: design first, then implementation
+## 1 · Two loops under delegated authority, bracketed by two maintainer touchpoints
 
 Every major feature runs **two sequenced loops, never one**:
 
 1. **Design loop** — produces a design doc. Author agent + adversarial reviewer in revision rounds, including the interface-consumer exercise.
-2. **Maintainer approval gate** — the shipped design goes to the maintainer. Implementation does not begin until they approve it. SHIP ends the *design loop*, not the design.
-3. **Implementation loop** — author subagents implement against the approved design doc, one phase at a time; the adversarial reviewer reviews the code in rounds under the same findings discipline.
+2. **Implementation loop** — author subagents implement against the approved design doc, one phase at a time; the adversarial reviewer reviews the code in rounds under the same findings discipline.
+
+**Delegated authority is the default posture.** Within a loop the coordinator holds delegated authority to rule the design and implementation decisions itself and drive the loop to a SHIP, without surfacing each decision for maintainer approval mid-loop. The coordinator tags and records every decision it rules and presents the major ones at the next touchpoint (§6); it does not pause the loop to pre-clear them. The delegation covers decisions taken inside a loop. It does not let the coordinator end a loop (only the adversarial reviewer's plain SHIP does that), skip its own post-SHIP spot-check, or override the adversarial reviewer's authority.
+
+**Two standing maintainer touchpoints bracket the implementation, and they are the only two:**
+
+- **Touchpoint 1, after the design loop SHIPs.** The maintainer reviews the batch of delegated design decisions (the major ones presented as four-part walkthroughs, §6) *and* approves before the implementation loop begins. This single touchpoint is both the decision review and the go-ahead to implement; it replaces the former standalone approval gate. SHIP ends the *design loop*, not the design.
+- **Touchpoint 2, after the implementation loop SHIPs.** The maintainer reviews what was built.
+
+Between the two loops and within each of them, the coordinator runs autonomously under the delegation. These two touchpoints are the only standing ones; the gated actions below are separate per-action holds, not additional touchpoints.
+
+**Gated actions always wait for an explicit maintainer go, regardless of loop state.** Even under delegated authority a fixed set is never taken autonomously: merging to a shared trunk, any outward-facing "this is ready" signal (publishing, announcing, marking a PR ready), and anything hard to reverse. These wait for an explicit go whatever the loop's state, so the delegation is never read as "autonomous merges."
 
 **Termination rule for both loops: the loop proceeds — revision round after revision round — until the adversarial reviewer's verdict is a plain SHIP.** Nobody but the reviewer ends a loop, and the coordinator still independently spot-checks after SHIP, before anything reaches the maintainer.
 
@@ -77,22 +87,27 @@ Every reviewer brief carries all six of these:
 - **The reviewer is persistent across rounds within a loop.** One reviewer sees every round, so it can verify dispositions against the revised text rather than re-deriving the design each time. Rounds stack **newest-first** in a single review file next to the artifact under review.
 - **A fresh reviewer starts each new loop or phase.** The design loop's reviewer does not review the implementation; each implementation phase gets its own reviewer. Fresh eyes per unit of work; continuity within it.
 - **Keep reviewer contexts open after they finish**, so the coordinator can ask follow-up questions instead of re-litigating from scratch.
-- **Author and reviewer agents run on the strongest model available in the environment**, and the choice is a maintainer setting recorded in the project's `CLAUDE.md` (the source project ran every author and reviewer on its strongest available subagent model). This matters most for the adversarial reviewer: its entire yield is the defect classes that mechanical gates miss, and that yield is model-dependent. A reviewer on a weak model returns SHIP, every gate in the methodology becomes a rubber stamp, and nothing in the output reveals that this is what happened. Reviewers are never given a weaker model than authors.
 
 ---
 
-## 6 · Maintainer rulings: the four-part walkthrough
+## 6 · Weight-sorted decisions and the four-part walkthrough
 
-Contested findings, reviewer-vs-author disagreements, and any decision that trades off product behavior go to the maintainer. Each one is presented in exactly four parts:
+Under delegated authority (§1) the coordinator rules the decisions a loop produces and drives on without pausing for per-decision approval. What replaces the pause is a recording-and-presentation discipline:
+
+- **Tag every delegated decision major or mechanical.** Major means it settles a contract, an architecture choice, or a risk trade-off. Mechanical is everything else.
+- **Record all of them in the design artifact's decision table** — major and mechanical alike — each with its ruling and accepted costs. The artifact is the single home for the decision record (§9).
+- **Present the major ones to the maintainer at Touchpoint 1** (§1), each as a four-part walkthrough. Mechanical decisions are recorded, not walked.
+
+The four-part walkthrough survives as the presentation FORMAT at the touchpoint, not as a per-decision gate that blocks the loop. Each major decision is presented in exactly four parts:
 
 1. **Background** — written for a low-context reader. Assume the maintainer has not read the diff or the finding thread.
 2. **Concrete failure scenario** — the specific sequence of events in which this goes wrong, with real values.
 3. **Options, each with what it GIVES UP** — not a list of upsides. Every option's cost is stated explicitly; an option with no stated cost has not been analyzed.
 4. **Recommendation with reasoning** — a real recommendation, not a shrug.
 
-**A recommendation is never auto-applied.** The maintainer rules; the coordinator implements the ruling. Batch related decisions into one message rather than drip-feeding them. Spot-check load-bearing findings yourself before relaying them — reviewers can be wrong, and a BLOCKER relayed without verification wastes a maintainer decision.
+Batch related decisions into one presentation rather than drip-feeding them. **Spot-check load-bearing findings yourself before relaying them** — reviewers can be wrong, and a BLOCKER relayed without verification wastes a maintainer decision.
 
-Rulings travel into the next revision brief **verbatim and binding**, alongside every other finding with its required disposition, and explicit discretion boundaries (which fix shapes are the author's call — those require a one-paragraph justification).
+A decision the maintainer overrides at a touchpoint travels into the next revision brief **verbatim and binding**, alongside every other finding with its required disposition, and explicit discretion boundaries (which fix shapes are the author's call — those require a one-paragraph justification).
 
 **Propose the ideal plan — no sunk-cost pre-compromise.** Plans, proposals, and briefs optimize for the best end state, judged purely on outcome quality. Implementation effort, edit cheapness, and sunk cost in already-built artifacts are never decision criteria and must not be baked into a brief. Present the ideal plan first; then, separately, discuss how it could be compromised down if required. Real costs are inputs to the maintainer's trade-off, never reasons to self-censor a recommendation.
 
@@ -125,6 +140,22 @@ The coordinator's job is to hold the thread, not to do all the work — and not 
 - **Reviews stack newest-first in one review file** beside the artifact.
 - **Keep design docs current.** When a change alters a subsystem, the subsystem's design doc changes in the same commit. Stale docs mislead every future agent that reads them.
 - **On SHIP**, promote the artifact into the project's docs tree and index it from the project's `CLAUDE.md`, then archive the review trail — but ask the maintainer first; never assume.
+
+---
+
+## 10 · Writing register for design and doc artifacts
+
+Design docs and the doc artifacts a loop produces are written **from absolute first principles**. The rationale is mechanism-before-memorization: a reader handed the motivation and the moving parts can re-derive the design under pressure, where a reader handed only conclusions can recite but not extend them. State the rationale so the register is followed, not cargo-culted. The register:
+
+- **Assume the reader knows nothing about the subsystem.** Build from the ground up; introduce each concept only as the solution to a problem the previous concept created.
+- **Motivation before mechanism.** State the problem a mechanism solves before the mechanism itself.
+- **Define every term before first use.** Never reference a concept the document has not yet introduced, including one introduced later in the same document.
+- **A worked example with real values for every abstract mechanism.** Show the state before, the action, and the state after, with concrete values, plus one allowed and one denied case traced against that state. A slogan is not an explanation; if the reader cannot picture the stored data changing, the mechanism has not been explained.
+- **Flag every simplification explicitly** at the point you make it, so it is a stated contract rather than a later surprise.
+- **End with a single compressed takeaway sentence.**
+- **No em dashes.** State the fact upfront and let each claim stand as its own sentence, rather than burying a lead behind a preface or bolting an afterthought onto the tail.
+
+The template `skills/design-loop/assets/design-doc-template.html` carries this register's section skeleton and the decision-table styling; the shipped design docs it is modeled on are the worked exemplars, opening with a from-nothing orientation section, grounding every claim in `file:line`, and carrying a wire-level worked example for each mechanism.
 
 ---
 

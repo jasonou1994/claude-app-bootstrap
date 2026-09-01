@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<!--
+  Design-doc template for the app-bootstrap design loop.
+
+  Copy this file to the design's scratchpad path and fill it in. The section
+  skeleton below matches the required structure in the design-loop skill
+  (SKILL.md, Phase 1) and the writing register in the playbook (§10):
+  first principles, motivation before mechanism, every term defined before
+  first use, a real-valued worked example for every abstract mechanism.
+
+  Replace every <!-- PLACEHOLDER --> comment with real content. Do not ship
+  the placeholder comments.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title><!-- Design title: "<subsystem>: <what this designs>" --></title>
+<style>
+  /* Readable body: a fixed max-width column, generous line height. */
+  body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; max-width: 60em; margin: 2em auto; padding: 0 1.5em; color: #1a1a1a; line-height: 1.55; }
+  h1 { font-size: 1.7em; border-bottom: 2px solid #ccc; padding-bottom: 0.3em; }
+  h2 { font-size: 1.3em; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 0.2em; }
+  h3 { font-size: 1.05em; margin-top: 1.6em; }
+
+  /*
+    Decision-table styling.
+
+    table-layout: fixed is REQUIRED. Without it the table auto-sizes to its
+    content, and a decision row with a long options/costs cell blows the table
+    past the body column and forces horizontal scrolling. A real bug hit this
+    exact way this week: an auto-layout decision table overflowed the page.
+    Fixed layout distributes width by the column percentages below, and the
+    cell-wrapping rules (overflow-wrap: break-word) then force long tokens
+    (URLs, file:line refs, code spans) to wrap inside their cell instead of
+    widening it. vertical-align: top keeps multi-line cells aligned to the top.
+  */
+  table { border-collapse: collapse; margin: 1em 0; width: 100%; font-size: 0.93em; table-layout: fixed; }
+  th, td { border: 1px solid #bbb; padding: 0.45em 0.6em; text-align: left; vertical-align: top; overflow-wrap: break-word; }
+  th { background: #f0f0f0; }
+
+  code { background: #f4f4f4; padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.92em; }
+  pre { background: #f7f7f7; border: 1px solid #ddd; padding: 0.8em 1em; overflow-x: auto; font-size: 0.88em; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+
+  /* Status badges for decision rows. Add classes here as new statuses appear. */
+  .ruled { display: inline-block; background: #d7f0d7; border: 1px solid #4a934a; color: #1e5c1e; font-size: 0.78em; font-weight: 600; padding: 0.05em 0.5em; border-radius: 3px; vertical-align: middle; }
+  .proposed { display: inline-block; background: #fff3cd; border: 1px solid #d4b106; color: #7a5d00; font-size: 0.78em; font-weight: 600; padding: 0.05em 0.5em; border-radius: 3px; vertical-align: middle; }
+
+  .meta { color: #666; font-size: 0.9em; }
+  .rowlabel { white-space: nowrap; font-weight: 600; }
+  caption { caption-side: top; text-align: left; font-weight: 600; padding-bottom: 0.3em; }
+
+  /* Column widths for the decision table (see section 6). Tune per doc. */
+  col.c-num { width: 4%; }
+  col.c-q { width: 26%; }
+  col.c-opts { width: 42%; }
+  col.c-ruling { width: 28%; }
+</style>
+</head>
+<body>
+
+<h1><!-- Design title --></h1>
+<p class="meta"><!-- Author line: "Author: design loop, <date>. Grounded in <file>, <file>, and PR #<n>." List the ground-truth sources this doc is grounded in, by path. --></p>
+
+<h2 id="problem">1. Problem statement</h2>
+<!--
+  What forces this design to exist, stated for a reader who knows nothing about
+  the subsystem. Motivation before mechanism (playbook §10). Name the tension
+  or the failure the design resolves. No mechanism yet; only the problem.
+-->
+
+<h2 id="first-principles">2. First principles</h2>
+<!--
+  Build the subsystem up from nothing. Introduce each concept only as the
+  solution to a problem the previous concept created. Define every term before
+  first use; never reference a concept this doc has not yet introduced.
+
+  EVERY abstract mechanism gets a wire-level worked example with REAL values:
+  the state before, the action, the state after, and one allowed plus one
+  denied request traced against that state. Ground each claim with a file:line
+  citation. Flag every simplification explicitly at the point you make it.
+-->
+
+<h2 id="design">3. The design</h2>
+<!--
+  The design proper, now that section 2 has earned the vocabulary. One idea per
+  subsection. Reference concepts by the name section 2 gave them; do not
+  re-explain them.
+-->
+
+<h2 id="interfaces">4. Interface sketches</h2>
+<!--
+  The concrete interfaces the design introduces (request/response shapes, RPC
+  signatures, type definitions, route tables). Show them as code. These are the
+  surfaces the interface-consumer exercise (design-loop SKILL.md Phase 2) will
+  be written against, so they must be complete enough to write real callers.
+-->
+<pre><code><!-- interface sketch: types / signatures / route table --></code></pre>
+
+<h2 id="consumers">5. Per-consumer instantiation</h2>
+<!--
+  For each real consumer of the interfaces above, show how it uses them, grounded
+  with file:line references to the actual caller code (or the code it will
+  replace). This is where an interface that cannot express a real usage path
+  gets caught. One subsection per consumer.
+-->
+
+<h2 id="decisions">6. Decision table</h2>
+<!--
+  Every design decision the loop settles, weight-sorted and recorded here (this
+  table is the single home for decisions; playbook §6 and §9). Tag each row's
+  status with a badge: <span class="ruled">RULED &lt;date&gt;</span> or
+  <span class="proposed">PROPOSED</span>. Major decisions (contract /
+  architecture / risk) are the ones presented to the maintainer at Touchpoint 1
+  as four-part walkthroughs; mechanical decisions are recorded here, not walked.
+  The "Options and costs" cell states what EACH option gives up, never a list of
+  upsides.
+-->
+<table>
+<colgroup>
+  <col class="c-num"><col class="c-q"><col class="c-opts"><col class="c-ruling">
+</colgroup>
+<tr><th>#</th><th>Question</th><th>Options and what each gives up</th><th>Ruling and reasoning</th></tr>
+<tr>
+  <td class="rowlabel">D1</td>
+  <td><!-- the decision, one line --> <span class="proposed">PROPOSED</span></td>
+  <td><!-- (a) option, and what it gives up. (b) option, and what it gives up. --></td>
+  <td><!-- the ruling, the option chosen, and why; accepted costs stated --></td>
+</tr>
+<!-- one row per decision -->
+</table>
+
+<h2 id="plan">7. Migration / build plan</h2>
+<!--
+  The phased plan the implementation loop will execute. Each phase carries a
+  NAMED verification gate (playbook, implementation-loop SKILL.md): the concrete
+  check that proves the phase is done. A phase without a named gate is not
+  planned.
+-->
+<table>
+<colgroup><col style="width:8%"><col style="width:47%"><col style="width:45%"></colgroup>
+<tr><th>Phase</th><th>What it builds</th><th>Named verification gate</th></tr>
+<tr><td>1</td><td><!-- scope --></td><td><!-- the gate that proves phase 1 --></td></tr>
+</table>
+
+<h2 id="concerns">8. Concerns</h2>
+<!--
+  Honest open questions, each with a recommendation. This is where the doc admits
+  what it does not know. Mark facts the doc could not establish from the source
+  as open inputs.
+-->
+
+<h2 id="departures">9. Departures</h2>
+<!--
+  Every place the design departs from the negotiable baseline (design-loop
+  SKILL.md Phase 0). One row per departure: baseline position / author position /
+  rationale. Departures are never silent.
+-->
+<table>
+<colgroup><col style="width:33%"><col style="width:33%"><col style="width:34%"></colgroup>
+<tr><th>Baseline position</th><th>Author position</th><th>Rationale</th></tr>
+<tr><td><!-- --></td><td><!-- --></td><td><!-- --></td></tr>
+</table>
+
+<h2 id="revlog">10. Revision log</h2>
+<!--
+  Extended per revision round (playbook §9: revisions are in-place edits to this
+  one artifact, no addendum files, no -v2 copies). Newest entry first.
+-->
+<ul>
+  <li><!-- <date> round N: what changed and why --></li>
+</ul>
+
+<h2 id="takeaway">11. Takeaway</h2>
+<!--
+  A single compressed takeaway sentence (playbook §10): the one sentence a reader
+  should leave with.
+-->
+
+</body>
+</html>

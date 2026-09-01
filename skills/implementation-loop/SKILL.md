@@ -10,7 +10,7 @@ Implement an approved design, **one phase at a time**, each phase its own author
 
 Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
 
-**Entry gate:** the design has SHIPped *and* the maintainer has approved it. Not one or the other.
+**Entry gate:** Touchpoint 1 is cleared — the design has SHIPped *and* the maintainer has reviewed the delegated design decisions and approved implementation (playbook §1). Not one or the other. Once entered, the loop runs autonomously under delegated authority through every phase to a plain SHIP; the next standing maintainer review is Touchpoint 2, after the whole implementation loop SHIPs.
 **Exit gate per phase:** a plain SHIP from that phase's adversarial reviewer, plus the coordinator's own independent spot-check.
 
 ---
@@ -99,6 +99,6 @@ Reviewer brief: the playbook §3 template, plus the phase's design section, plus
 1. SHIP verdict from the reviewer.
 2. Coordinator's independent spot-check of the actual code and the actual gate output.
 3. Design doc updated in the same change if the phase altered any subsystem's behavior. Stale docs mislead every future agent.
-4. Report to the maintainer: what shipped, what the gates now prove, every measured-vs-estimated discrepancy, and any deferred item with the phase that will absorb it.
+4. Record the phase outcome for the eventual Touchpoint 2 review: what shipped, what the gates now prove, every measured-vs-estimated discrepancy, and any deferred item with the phase that will absorb it. This is a non-blocking record, not a per-phase approval gate — under delegated authority (playbook §1) the coordinator does not wait for the maintainer between phases.
 
-Then, and only then, start the next phase.
+Then, once steps 1-3 hold, start the next phase. The maintainer reviews the accumulated phase records at Touchpoint 2, after the implementation loop's final phase SHIPs.
