@@ -1,6 +1,6 @@
 # app-bootstrap
 
-A Claude Code plugin that packages a five-stage methodology for taking an app from an idea to shipped, reviewed code.
+A Claude Code plugin that packages a five-stage methodology (six skills; stage 1 has two halves) for taking an app from an idea to shipped, reviewed code.
 
 Most of its rules were adopted after a specific failure. The History section records which.
 
@@ -15,6 +15,7 @@ Part 1 assumes no experience with git, plugins, or Claude Code. Part 2 is the [t
 The methodology has five stages. Each one ends when you approve its output.
 
 1. **Product discovery.** Claude asks what the product does, who uses it, and what happens when things go wrong, then writes the answers up as a requirements document. Technical concepts are explained from first principles until you can challenge them. When you challenge a technical choice, Claude converts the objection into a question it can measure instead of arguing the point.
+   - **1b. User journeys.** A second Claude, kept away from the product's own documents, writes down at least eight kinds of person who might use it (you are one of them, and so is someone using a screen reader) and what each of them walks through: the first run, the daily loop, the day the product is wrong. Those walks are then held against the requirements (or, on a product that already exists, against what is built) and every step is marked served, awkward or missing. A third Claude reviews the result adversarially. You get one page, a map, with every number counted from the register, and you decide what it changes about the plan. The map never changes the plan by itself.
 2. **Wireframes.** Claude draws every screen of your app as a web page you can open in a browser, including the empty screens and the error screens. Each behavior the drawing does not make obvious gets a numbered note. Those notes are binding: later stages settle questions about the interface by reading this page.
 3. **Design review.** Claude writes a technical design. A second Claude reviews it adversarially, and the two exchange revisions until the reviewer's verdict is SHIP. Disagreements come to you as a written explanation with options and their costs. Implementation waits for your approval.
 4. **Implementation.** The build runs in phases. In each phase one Claude writes the code, a second Claude reviews it adversarially, and they iterate until the reviewer's verdict is SHIP. You see what shipped before the next phase starts.
@@ -48,7 +49,7 @@ Expected output: `✔ Successfully installed plugin: app-bootstrap@claude-app-bo
 claude plugin list
 ```
 
-Expected output: `app-bootstrap@claude-app-bootstrap` with `Status: ✔ enabled`. For a detailed view of the five skills and their per-session token cost, run `claude plugin details app-bootstrap`.
+Expected output: `app-bootstrap@claude-app-bootstrap` with `Status: ✔ enabled`. For a detailed view of the six skills and their per-session token cost, run `claude plugin details app-bootstrap`.
 
 Now start Claude Code in your project, or restart it. A session picks up newly installed plugins when it starts, so a conversation that was already open will not see the plugin until you begin a new one.
 
@@ -57,6 +58,7 @@ Now start Claude Code in your project, or restart it. A session picks up newly i
 The five stages are now available as slash commands, each prefixed with the plugin's name:
 
 - `/app-bootstrap:product-discovery`
+- `/app-bootstrap:user-journeys`
 - `/app-bootstrap:wireframes`
 - `/app-bootstrap:design-loop`
 - `/app-bootstrap:implementation-loop`
@@ -109,13 +111,13 @@ Do the following, in order:
        named `app-bootstrap` lands one level too high and finds no `skills/`
        there. If several versions come back (each update adds one), take the
        highest.
-   Read that playbook.md, then read the five SKILL.md files from its grandparent
+   Read that playbook.md, then read the six SKILL.md files from its grandparent
    directory, at <version>/skills/*/SKILL.md. Use what they actually say. If you
    cannot find them, STOP and tell me. Do not write the next step from memory.
 
 4. Propose an addition to this repository's CLAUDE.md: a section that references the
-   five stage-skills by their exact slash-command names
-   (/app-bootstrap:product-discovery, /app-bootstrap:wireframes,
+   six stage-skills by their exact slash-command names
+   (/app-bootstrap:product-discovery, /app-bootstrap:user-journeys, /app-bootstrap:wireframes,
    /app-bootstrap:design-loop, /app-bootstrap:implementation-loop,
    /app-bootstrap:e2e-review), says what each one produces for THIS project
    specifically, and states the gate rules plainly:
@@ -145,7 +147,7 @@ Start with step 1 and tell me what you find.
 2. Paste the onboarding prompt above. Answer its questions, and approve the CLAUDE.md diff when it shows you one.
 3. Type `/app-bootstrap:product-discovery` and describe your idea in your own words. Claude will ask what happens in the failure cases before it writes anything down.
 4. Continue until Claude produces a requirements document. Read it, correct what is wrong, and sign it off.
-5. Type `/app-bootstrap:wireframes`, then review and sign off the same way.
+5. Type `/app-bootstrap:user-journeys`, read the map it ends with, and rule on what it changes. Then type `/app-bootstrap:wireframes`, and review and sign off the same way.
 6. Continue through `/app-bootstrap:design-loop` and the remaining stages in order.
 
 Stage 1 takes longer than the stages that follow it.
@@ -159,12 +161,13 @@ Stage 1 takes longer than the stages that follow it.
 | Stage | Skill | Produces | Exit gate |
 | :-- | :-- | :-- | :-- |
 | 1 | `/app-bootstrap:product-discovery` | Requirements doc: hard requirements `R1..Rn` split from the negotiable baseline, plus a dated product-decisions log | Maintainer signs off the requirements doc |
+| 1b | `/app-bootstrap:user-journeys` | Personas, journeys and a tagged gap register written blind behind a firewall (greenfield: held against the R-list; brownfield: against the feature surface), plus a self-contained journey map whose every number is counted from the register | Plain **SHIP** from the adversarial reviewer, then the maintainer reads the map and rules on the roadmap; the skill never changes the roadmap itself |
 | 2 | `/app-bootstrap:wireframes` | One published artifact covering every surface, with numbered callouts carrying binding semantics | Maintainer sign-off; artifact URL recorded in the project `CLAUDE.md` as the UI source of truth |
 | 3 | `/app-bootstrap:design-loop` | Design doc + full review trail | Plain **SHIP** from the adversarial reviewer, then a separate maintainer approval gate |
 | 4 | `/app-bootstrap:implementation-loop` | Shipped code, phase by phase | Plain **SHIP** per phase, plus the coordinator's independent spot-check |
 | 5 | `/app-bootstrap:e2e-review` | Browser-driven journey results | **STUB**. Shape defined, not yet validated |
 
-Shared doctrine for all five lives in [`docs/playbook.md`](docs/playbook.md): two-loop sequencing, the adversarial briefing template, persistent-author/reviewer continuation rules, the maintainer four-part walkthrough format, the SHIP / ONE MORE ROUND verdict vocabulary, delegation economics, and background-agent hygiene. Each skill points at it rather than restating it.
+Shared doctrine for all six lives in [`docs/playbook.md`](docs/playbook.md): two-loop sequencing, the adversarial briefing template, persistent-author/reviewer continuation rules, the maintainer four-part walkthrough format, the SHIP / ONE MORE ROUND verdict vocabulary, delegation economics, and background-agent hygiene. Each skill points at it rather than restating it.
 
 ## Repository layout
 
@@ -177,6 +180,9 @@ claude-app-bootstrap/
 │   └── playbook.md          # shared doctrine, referenced by every skill
 ├── skills/
 │   ├── product-discovery/SKILL.md
+│   ├── user-journeys/
+│   │   ├── SKILL.md
+│   │   └── assets/          # brief template, journey-map template, build-map.py
 │   ├── wireframes/SKILL.md
 │   ├── design-loop/SKILL.md
 │   ├── implementation-loop/SKILL.md
@@ -265,7 +271,7 @@ Which check covers what, verified against Claude Code 2.1.226 by injecting two d
 | :-- | :-- |
 | `claude plugin validate .` (repo root) | **Marketplace manifest only.** Because this repo contains `.claude-plugin/marketplace.json`, `validate` resolves it as a marketplace and never opens `skills/`. It printed `✔ Validation passed` with a broken skill on disk. |
 | `claude plugin validate .claude-plugin/plugin.json --strict` | Plugin manifest **and every skill's frontmatter**. This is the form that caught the injected defect: `❯ frontmatter: YAML frontmatter failed to parse`. Skill lines print only on error. **Keep `--strict`**: without it, a missing `description` is only a warning, printing `✔ Validation passed with warnings` at exit 0, so the default command greenlights a skill that has stopped surfacing. With `--strict` the same input exits 1. |
-| `claude --plugin-dir . plugin details app-bootstrap` | What loads at runtime: the component inventory (`Skills (5) …`) and per-skill token cost. This is the only check that proves all five skills load. A broken skill still counts toward `Skills (5)`; the tell is the token column, where its always-on figure collapses to `< 20` against a healthy `~100`. |
+| `claude --plugin-dir . plugin details app-bootstrap` | What loads at runtime: the component inventory (`Skills (6) …`) and per-skill token cost. This is the only check that proves all six skills load. A broken skill still counts toward `Skills (6)`; the tell is the token column, where its always-on figure collapses to `< 20` against a healthy `~100`. |
 
 A green `claude plugin validate .` on this repo means two JSON files parse. It is not evidence about the skills. A frontmatter error is otherwise silent, because the runtime loads the skill with empty metadata, dropping its description, after which the skill stops surfacing.
 
@@ -281,6 +287,8 @@ exits only on the maintainer's explicit sign-off.
 
 1. `/app-bootstrap:product-discovery` → requirements doc at `docs/requirements.md`
    (hard requirements R1..Rn vs. negotiable baseline; dated decisions log).
+   1b. `/app-bootstrap:user-journeys` → personas, journeys, gap register and journey
+   map in the project's docs tree; the maintainer rules on the roadmap from the map.
 2. `/app-bootstrap:wireframes` → UI source of truth: <artifact URL>. Numbered
    callouts carry binding semantics.
 3. `/app-bootstrap:design-loop` → design doc in `docs/`. Implementation begins only

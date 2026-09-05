@@ -9,8 +9,8 @@
     {
       "name": "app-bootstrap",
       "source": "./",
-      "version": "0.2.2",
-      "description": "A five-stage methodology for taking an app from an idea to shipped code: product discovery, wireframes, an adversarial design loop, a phased implementation loop, and end-to-end review.",
+      "version": "0.3.0",
+      "description": "A five-stage methodology for taking an app from an idea to shipped code: product discovery, user journeys (stage 1b: personas and journeys written blind, mapped, reviewed, drawn as one map), wireframes, an adversarial design loop, a phased implementation loop, and end-to-end review.",
       "homepage": "https://github.com/jasonou1994/claude-app-bootstrap",
       "repository": "https://github.com/jasonou1994/claude-app-bootstrap",
       "license": "MIT",

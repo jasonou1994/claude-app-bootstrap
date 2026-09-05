@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!--
+  Journey-map template for the app-bootstrap user-journeys skill (Stage 1b).
+
+  This file is self-contained: no external scripts, stylesheets, fonts or
+  images. It renders in light and dark themes and needs no server.
+
+  It is filled in by build-map.py, which sits beside it. The generator parses
+  journeys.md and gap-register.md, counts every number on the page from the
+  rows it finds there, and replaces the content between each pair of markers
+  below (BEGIN:NAME ... END:NAME). The sample content between the markers is
+  here only so the template previews in a browser; the generator discards it.
+
+  Never type a number into this page by hand. The footer's count-method text
+  states where every figure comes from, and the reviewer checks the figures
+  against the register. See SKILL.md, "The map".
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title><!--BEGIN:TITLE-->Journey map<!--END:TITLE--></title>
+<style>
+:root{--paper:#EFEAE0;--surface:#F7F4EC;--sunken:#EAE4D6;--ink:#2B2620;--muted:#635A4C;--rule:#D8D0C0;--rule-strong:#7C725A;
+--served:#3D6A50;--part:#39566B;--awk:#B98A2F;--miss:#A93F2E;--na:#7C725A;--red-wash:#F0DED9;--amber-wash:#F0E5CE;--accent-wash:#DFE8E0;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#201D18;--surface:#292520;--sunken:#322D26;--ink:#EAE3D6;--muted:#A69A88;--rule:#3E382E;--rule-strong:#8A8070;
+--served:#7FAE8F;--part:#8FB3CC;--awk:#D2A64C;--miss:#DC7E6A;--na:#8A8070;--red-wash:#3A2723;--amber-wash:#3A3020;--accent-wash:#28342C;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#201D18;--surface:#292520;--sunken:#322D26;--ink:#EAE3D6;--muted:#A69A88;--rule:#3E382E;--rule-strong:#8A8070;
+--served:#7FAE8F;--part:#8FB3CC;--awk:#D2A64C;--miss:#DC7E6A;--na:#8A8070;--red-wash:#3A2723;--amber-wash:#3A3020;--accent-wash:#28342C;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:13px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 22px;padding:10px 16px 6px;border-bottom:1px solid var(--rule-strong)}
+h1{font:500 22px/1.1 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;margin:0}
+header p{margin:0;color:var(--muted);max-width:70ch}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin-left:auto}
+.legend span{white-space:nowrap}
+/* Each tag has a shape as well as a colour, so the grid reads without colour vision:
+   served = filled circle; served in part = half-filled circle; awkward = diamond;
+   missing = filled square; does not apply = hollow circle. */
+.d{display:inline-block;width:8px;height:8px;border-radius:50%;margin:1px;vertical-align:middle;border:1px solid transparent}
+.d.served{background:var(--served);border-color:var(--served)}
+.d.part{background:linear-gradient(90deg,var(--part) 50%,transparent 50%);border-color:var(--part)}
+.d.awkward{background:var(--awk);border-color:var(--awk);border-radius:0;transform:rotate(45deg) scale(.8)}
+.d.missing{background:var(--miss);border-color:var(--miss);border-radius:1px}
+.d.na{background:transparent;border-color:var(--na)}
+.legend .d{width:10px;height:10px}
+button.toggle{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--rule-strong);border-radius:4px;padding:2px 8px;cursor:pointer}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;padding:8px 16px;border-bottom:1px solid var(--rule)}
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:5px 7px;font-size:11.5px;line-height:1.3;display:flex;flex-direction:column;gap:1px}
+.tile b{font-size:12.5px} .tile span{color:var(--muted)} .tile em{font-style:normal;color:var(--ink);margin-top:2px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:0;min-height:0}
+.gridwrap{overflow:auto;padding:6px 8px 6px 16px}
+table{border-collapse:collapse;font-size:11.5px}
+th,td{padding:1px 3px;border-bottom:1px solid var(--rule);vertical-align:middle;text-align:left}
+thead th{position:sticky;top:0;background:var(--paper);font-size:11px;color:var(--muted);font-weight:600;text-align:center;border-bottom:1px solid var(--rule-strong);padding:3px 2px}
+thead th.sp{color:var(--ink)}
+th[scope=row]{white-space:nowrap;max-width:270px;overflow:hidden;text-overflow:ellipsis;font-weight:400;padding-right:8px}
+.jid{font-weight:700;display:inline-block;width:28px} .jt{color:var(--ink)}
+.cell{display:inline-flex;flex-wrap:wrap;width:58px;min-height:14px;line-height:0;padding:1px 2px;background:transparent;border:1px solid transparent;border-radius:3px;cursor:pointer;align-content:center}
+button.cell:hover,button.cell:focus-visible,button.cell[aria-pressed=true]{border-color:var(--rule-strong);background:var(--sunken);outline:none}
+button.cell:focus-visible{outline:2px solid var(--part);outline-offset:1px}
+.cell.empty{cursor:default}
+aside{border-left:1px solid var(--rule-strong);display:flex;flex-direction:column;min-height:0;max-height:calc(100vh - 150px);position:sticky;top:0}
+#panel{padding:8px 12px;border-bottom:1px solid var(--rule);background:var(--surface);min-height:120px;max-height:38vh;overflow:auto}
+#panel h2,.register h2{font:600 12px/1.3 inherit;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+#panel ul{list-style:none;margin:0;padding:0} #panel li{margin:0 0 6px;padding-left:16px;position:relative} #panel li .d{position:absolute;left:0;top:4px}
+#panel .tag{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+#panel .empty{color:var(--muted)}
+.register{padding:8px 12px;overflow:auto;flex:1}
+.gap{border-bottom:1px solid var(--rule);padding:3px 0}
+.gap summary{cursor:pointer;list-style:none;font-size:12px} .gap summary::-webkit-details-marker{display:none}
+.gap summary .meta{display:block;color:var(--muted);font-size:11px}
+.gap p{margin:4px 0 4px;font-size:11.5px;color:var(--ink)}
+.sev{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:0 5px;border-radius:3px;font-weight:700;margin-right:3px}
+.gap.blocks .sev{background:var(--red-wash);color:var(--miss)} .gap.degrades .sev{background:var(--amber-wash);color:var(--awk)} .gap.nice .sev{background:var(--sunken);color:var(--muted)}
+.summary{margin:8px 0 0;padding:8px 0 0;border-top:1px solid var(--rule-strong)}
+.summary ol{margin:0;padding-left:0;list-style:none;font-size:11.5px} .summary li{margin:2px 0}
+.themes{margin:6px 0 0;padding-left:0;list-style:none;font-size:11px;color:var(--muted);columns:2}
+footer{padding:8px 16px 14px;border-top:1px solid var(--rule-strong);color:var(--muted);font-size:11.5px;max-width:none}
+footer p{margin:2px 0}
+@media (max-width:1100px){main{grid-template-columns:1fr} aside{position:static;max-height:none;border-left:0;border-top:1px solid var(--rule-strong)}}
+</style>
+</head>
+<body>
+<header>
+  <h1><!--BEGIN:HEADING-->Journey map<!--END:HEADING--></h1>
+  <p><!--BEGIN:INTRO-->Every persona, every journey, every step tagged against what exists. Click or focus a cell to read its steps; open a gap to read it. The person's words throughout.<!--END:INTRO--></p>
+  <div class="legend" aria-label="Legend">
+    <!--BEGIN:LEGEND-->
+    <span><i class="d served"></i> served, filled circle (0)</span>
+    <span><i class="d part"></i> served in part, half circle (0)</span>
+    <span><i class="d awkward"></i> awkward, diamond (0)</span>
+    <span><i class="d missing"></i> missing incl. planned or in build, square (0)</span>
+    <span><i class="d na"></i> does not apply, hollow (0)</span>
+    <!--END:LEGEND-->
+    <button type="button" class="toggle" id="theme">Theme: system</button>
+  </div>
+</header>
+<section class="strip" aria-label="Personas">
+  <!--BEGIN:PERSONAS-->
+  <div class="tile"><b>P1 Sample</b><span>who they are, in one line</span><em>Core loop: J1, J2</em></div>
+  <!--END:PERSONAS-->
+</section>
+<main>
+  <div class="gridwrap">
+  <table aria-label="Journeys by persona">
+    <!--BEGIN:GRID-->
+    <thead><tr><th scope="col">Journey</th><th scope="col" class="sp">Spine</th><th scope="col" title="Sample">P1</th></tr></thead>
+    <tbody><tr><th scope="row" title="First run"><span class="jid">J1</span> <span class="jt">First run</span></th><td><button type="button" class="cell" data-key="J1-spine" aria-label="J1 spine: 2 steps"><i class="d served"></i><i class="d missing"></i></button></td><td><button type="button" class="cell" data-key="J1-P1" aria-label="J1 P1: 1 step"><i class="d awkward"></i></button></td></tr></tbody>
+    <!--END:GRID-->
+  </table>
+  </div>
+  <aside>
+    <div id="panel" aria-live="polite"><h2>Steps</h2><p class="empty">Pick a cell. The spine column holds a journey's shared steps; a persona column holds that person's own variants.</p></div>
+    <div class="register">
+      <!--BEGIN:REGISTER-->
+      <h2>Gap register, blocks first (1 gap)</h2>
+      <details class="gap blocks"><summary><span class="sev">blocks</span> <b>G1.1</b> Sample gap title<span class="meta">hits P1 · breaks J1 · theme 1</span></summary><p>The gap's body, in the person's terms, with the personas it hits, the journeys it breaks and its severity.</p></details>
+      <div class="summary"><h2>What the surface is missing</h2><ol><li><b>1.</b> Sample summary item</li></ol>
+      <ul class="themes"><li>1: Sample theme</li></ul></div>
+      <!--END:REGISTER-->
+    </div>
+  </aside>
+</main>
+<footer>
+  <!--BEGIN:FOOTER-->
+  <p><b>Sources.</b> journeys.md, gap-register.md, review.md (verdict and date).</p>
+  <p><b>Count method.</b> Every number on this page is a count of rows in the walk tables of gap-register.md, one row per step id, grouped by the tag in the row's second column. Gap severities, personas and journeys are read from the register's Part B. Nothing here is estimated.</p>
+  <!--END:FOOTER-->
+</footer>
+<script id="data" type="application/json"><!--BEGIN:DATA-->{"J1-spine":[{"id":"J1.1","cls":"served","tag":"served","note":"sample"},{"id":"J1.2","cls":"missing","tag":"missing","note":"sample"}],"J1-P1":[{"id":"J1.P1.1","cls":"awkward","tag":"awkward","note":"sample"}]}<!--END:DATA--></script>
+<script id="names" type="application/json"><!--BEGIN:NAMES-->{"personas":{"P1":"Sample"},"titles":{"J1":"First run"}}<!--END:NAMES--></script>
+<script>
+(function(){
+  function strip(s){return s.replace(/<!--[^>]*-->/g,'');}
+  var data=JSON.parse(strip(document.getElementById('data').textContent));
+  var names=JSON.parse(strip(document.getElementById('names').textContent));
+  var panel=document.getElementById('panel');
+  var pressed=null;
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function show(key){
+    var parts=key.split('-'), j=parts[0], p=parts[1], list=data[key]||[];
+    var who=p==='spine'?'shared steps':(p+' '+(names.personas[p]||''));
+    var h='<h2>'+esc(j)+' '+esc(names.titles[j]||'')+' · '+esc(who)+'</h2><ul>';
+    list.forEach(function(s){h+='<li><i class="d '+esc(s.cls)+'"></i><b>'+esc(s.id)+'</b> <span class="tag">'+esc(s.tag)+'</span><br>'+esc(s.note)+'</li>';});
+    panel.innerHTML=h+'</ul>';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('button.cell'),function(b){
+    b.addEventListener('click',function(){ if(pressed) pressed.removeAttribute('aria-pressed'); pressed=b; b.setAttribute('aria-pressed','true'); show(b.dataset.key); });
+    b.addEventListener('focus',function(){ show(b.dataset.key); });
+    b.addEventListener('mouseenter',function(){ if(!pressed) show(b.dataset.key); });
+  });
+  var t=document.getElementById('theme'), root=document.documentElement, modes=['system','light','dark'], i=0;
+  t.addEventListener('click',function(){ i=(i+1)%3; if(modes[i]==='system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme',modes[i]); t.textContent='Theme: '+modes[i]; });
+})();
+</script>
+</body>
+</html>

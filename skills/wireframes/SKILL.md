@@ -10,14 +10,14 @@ Turn the signed-off requirements into a picture of every surface the product has
 
 Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
 
-**Entry gate:** the Stage 1 requirements doc is signed off.
+**Entry gate:** the Stage 1 requirements doc is signed off. When Stage 1b (`user-journeys`) has run, its `journeys.md`, `gap-register.md` and journey map are inputs too, and this stage draws every persona's first run, empty state and error path from them.
 **Exit gate:** the maintainer signs off the wireframes, and the artifact's stable identity — its published URL, or the committed path of the fallback below — is recorded in the project's `CLAUDE.md` as the UI source of truth.
 
 ## Before drawing
 
 **Invoke the `frontend-design` skill if it is available in this environment**, and follow its guidance on aesthetic direction, typography, and avoiding templated defaults. These wireframes are a design decision, not a box diagram; a wireframe that reads as a generic admin panel will produce a generic admin panel.
 
-Then re-read the requirements doc. Every hard requirement R1..Rn must be visible somewhere in the wireframes or explicitly marked as non-visual.
+Then re-read the requirements doc. Every hard requirement R1..Rn must be visible somewhere in the wireframes or explicitly marked as non-visual. If Stage 1b ran, read `journeys.md` and the gap register as well: every persona's first run is a surface to draw, every journey step the register tagged missing or awkward that the maintainer ruled in is a surface or a state, and each such surface names the step id it serves in its callout.
 
 ## Cover every surface
 

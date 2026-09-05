@@ -1,6 +1,6 @@
 # The Bootstrap Playbook
 
-Shared doctrine for all five stage-skills in the `app-bootstrap` plugin. Each skill points here rather than restating these rules — forked rules drift silently.
+Shared doctrine for all six stage-skills in the `app-bootstrap` plugin. Each skill points here rather than restating these rules, because forked rules drift silently.
 
 Read this once at the start of a stage. Everything below is binding unless the maintainer rules otherwise.
 
@@ -156,6 +156,18 @@ Design docs and the doc artifacts a loop produces are written **from absolute fi
 - **No em dashes.** State the fact upfront and let each claim stand as its own sentence, rather than burying a lead behind a preface or bolting an afterthought onto the tail.
 
 The template `skills/design-loop/assets/design-doc-template.html` carries this register's section skeleton and the decision-table styling; the shipped design docs it is modeled on are the worked exemplars, opening with a from-nothing orientation section, grounding every claim in `file:line`, and carrying a wire-level worked example for each mechanism.
+
+---
+
+## 11 · Loop operations
+
+Rules for running several loops at once in one repository and for closing what they produce. Each one was adopted after a specific failure in the completion drive of 2026-09-02 to 2026-09-05 (retrospective in the source project, `docs/drive/retrospective-2026-09-05.md`); the failure is stated before the rule so the rule can be re-derived.
+
+- **A worktree per loop when loops share directories; merge at SHIP after a fresh build.** Four loops on one checkout meant three phase closures in a row swept a neighbour's half-typed hunks into the wrong commit, three closures left HEAD uncompilable, and reviewers saw `Tests: 0 total` from files another author was mid-edit on. So: any loop whose directories overlap another live loop's runs in its own git worktree, and its author and reviewer share that worktree. At SHIP the coordinator merges to the trunk only after building the merged tree from scratch (including any shared package whose build output a type-check reads) and running the touched suites there. Loops on disjoint directories may share a checkout; the moment they touch the same file, they split.
+- **The fresh-checkout build is the last step of every phase closure.** Closure commits were staged from the author's list of touched files, and four times that list was incomplete (a route, a fixture, a seam, a wiring file), so HEAD did not compile for anyone who checked it out. So: before a closure is declared, check out HEAD into a fresh directory and build it. Read the author's touched-file list against the working tree's status; a hunk a neighbour left in a shared file is named in the closure message, never swept in silently.
+- **Reviewers replay injections from `cp` backups and rebuild after restoring.** A gate is believed only after it has been watched to fail (implementation-loop rule 3), and the reviewer, not the author, does the watching. So: the reviewer copies the file aside, pastes the defect in, runs the gate and records the red, restores from the copy, runs it again and records the green. The injection window is not confined to source: a neighbour's build can capture an injected expression in compiled output (`dist/`) between the paste and the restore, and a later run then tests the defect under a green name. Rebuild after restoring, and treat a gate that passes against the defect it names as a finding.
+- **Only the coordinator numbers decisions.** Authors running in parallel each assigned their own ids to rulings they needed, and the ids collided three times, so two different rulings share a number in the record. So: decision ids are assigned by the coordinator alone; an author that needs one asks and waits. A ruling is written into the decision record before the brief that cites it is sent.
+- **A dated, immutable scoring protocol before a measurement's first call.** A measurement whose rules are written after its results are seen measures the rule-writer. So: before the first call of any measurement (an agent campaign, a precision-and-recall sample, a benchmark), write the labels, the scoring rules and the counting method into a dated file, and never edit that file afterwards. A rule discovered post hoc goes into a new dated file beside the original, which states what it changes and why, so a reader can see which results were scored under which rules.
 
 ---
 
