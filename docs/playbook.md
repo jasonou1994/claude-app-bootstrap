@@ -10,10 +10,10 @@ Read this once at the start of a stage. Everything below is binding unless the m
 
 Every major feature runs **two sequenced loops, never one**:
 
-1. **Design loop** — produces a design doc. Author agent + adversarial reviewer in revision rounds, including the interface-consumer exercise.
-2. **Implementation loop** — author subagents implement against the approved design doc, one phase at a time; the adversarial reviewer reviews the code in rounds under the same findings discipline.
+1. **Design loop** — produces a design doc. An author writes it; a chain of fresh adversarial passes (§12) hunts it, fixes what it finds in place, and runs the interface-consumer exercise, until a pass changes nothing.
+2. **Implementation loop** — an author implements against the approved design doc, one phase at a time; the same chain of fresh adversarial passes hunts the code under the same findings discipline and the six gate-honesty rules.
 
-**Delegated authority is the default posture.** Within a loop the coordinator holds delegated authority to rule the design and implementation decisions itself and drive the loop to a SHIP, without surfacing each decision for maintainer approval mid-loop. The coordinator tags and records every decision it rules and presents the major ones at the next touchpoint (§6); it does not pause the loop to pre-clear them. The delegation covers decisions taken inside a loop. It does not let the coordinator end a loop (only the adversarial reviewer's plain SHIP does that), skip its own post-SHIP spot-check, or override the adversarial reviewer's authority.
+**Delegated authority is the default posture.** Within a loop the coordinator holds delegated authority to rule the design and implementation decisions itself and drive the loop to a SHIP, without surfacing each decision for maintainer approval mid-loop. The coordinator tags and records every decision it rules and presents the major ones at the next touchpoint (§6); it does not pause the loop to pre-clear them. The delegation covers decisions taken inside a loop. It does not let the coordinator end a loop early (a loop ends by the chain's stop rule in §12, never by fiat), skip its own closure checks, or override a pass's finding without a recorded ruling.
 
 **Two standing maintainer touchpoints bracket the implementation, and they are the only two:**
 
@@ -24,46 +24,46 @@ Between the two loops and within each of them, the coordinator runs autonomously
 
 **Gated actions always wait for an explicit maintainer go, regardless of loop state.** Even under delegated authority a fixed set is never taken autonomously: merging to a shared trunk, any outward-facing "this is ready" signal (publishing, announcing, marking a PR ready), and anything hard to reverse. These wait for an explicit go whatever the loop's state, so the delegation is never read as "autonomous merges."
 
-**Termination rule for both loops: the loop proceeds — revision round after revision round — until the adversarial reviewer's verdict is a plain SHIP.** Nobody but the reviewer ends a loop, and the coordinator still independently spot-checks after SHIP, before anything reaches the maintainer.
+**Termination rule for both loops: the loop proceeds, pass after pass, until a pass changes nothing beyond line level and shows its receipts (§12).** That pass's report is the loop's SHIP. The coordinator still runs its own closure checks after it, before anything reaches the maintainer.
 
-**Fixer ≠ judge.** The agent that wrote something never certifies it alone.
+**Fixer ≠ judge, one step removed.** A pass fixes what it finds, so it is a fixer; the next fresh pass judges its fixes first. The agent that wrote something never certifies it alone: the author does not end its own phase, and a pass does not end the phase it changed.
 
 ---
 
 ## 2 · Verdict vocabulary
 
-There are exactly two verdicts:
+Inside a loop there is exactly one verdict line, and every pass ends with it:
 
-- **SHIP**
-- **ONE MORE ROUND**
+- **CODE CHANGED beyond line-level: yes** (the phase gets another pass)
+- **CODE CHANGED beyond line-level: no** (the phase is closed; this is its SHIP)
 
-Nothing else exists. "Mostly fine", "ship with reservations", "SHIP modulo two nits", "LGTM" — all of these are **ONE MORE ROUND**. Reviewers are told this in their brief, and a hedged verdict is treated as ONE MORE ROUND regardless of how the reviewer meant it.
+Nothing else exists. "Mostly fine", "ship with reservations", "nothing serious", "LGTM" are not verdicts: a pass that found nothing shows the receipts of its hunt (§3) and writes "no"; a pass that changed anything beyond a line writes "yes". A hedged line is read as "yes". Line-level means a citation, a count, a word, a version literal; a new case, a new branch, a changed assertion or a moved edge is beyond it. **SHIP** and **ONE MORE ROUND** survive only as the coordinator's words to the maintainer at a touchpoint.
 
 Findings inside a round use a separate two-axis vocabulary:
 
 - **Severity**: BLOCKER / MAJOR / MINOR / NIT
 - **Confidence**: CONFIRMED (with `file:line`) or PLAUSIBLE (with what would confirm it)
 
-**Which severities block a SHIP:** a SHIP asserts that no BLOCKER or MAJOR finding is open, and that every remaining MINOR and NIT is explicitly listed in the verdict as accepted residue for the maintainer. Listing accepted residue is not a hedge — it is the verdict doing its job; what §2 bans is the *unenumerated* qualifier ("mostly fine", "modulo a few nits") that leaves the reader to guess what is still open. Without this rule the loop has no termination condition, since a reviewer instructed that "no issues found" is a failed review can always produce one more NIT.
+**What a closing pass may leave open:** no BLOCKER or MAJOR (a pass fixes those in place, or writes "needs a ruling" and the coordinator rules before the phase closes); every remaining MINOR and NIT is listed by name in the report as carried to the next phase's brief. Listing carried items is not a hedge; the unenumerated qualifier ("modulo a few nits") is what this section bans. A pass that cannot finish a fix writes RESUME STATE and the coordinator extends the chain.
 
 ---
 
 ## 3 · Adversarial briefing template
 
-**The review step is adversarial by construction: the reviewer's brief states as a premise that the work under review contains defects, and the reviewer's job is to find them.** A review that returns "looks good, no issues" without having hunted is a failed review, not a passed one.
+**The review step is adversarial by construction: the pass's brief states as a premise that the work under review contains defects, and the pass's job is to find them and fix them.** A pass that returns "looks good, no issues" without having hunted is a failed pass, not a closing one.
 
-Every reviewer brief carries all six of these:
+Every pass brief carries all six of these:
 
 1. **Skeptic framing, never validator framing.** Write "this work contains at least one real defect — find it" (or, when that would be a lie, "assume it does until you have exhausted the defect classes below"). Never write "check whether this looks right." Validators rubber-stamp; hunters read.
 2. **A target list of defect classes.** Enumerate what to sweep — wrong behavior on edge inputs, contract violations between modules, convention breaches, stated-behavior-vs-actual-code contradictions, invented facts, missing error handling, gates that certify something they never tested. An unscoped "find problems" degrades into style nitpicks.
 3. **Per-defect-class receipts.** A clean report must prove the hunt happened: for each class, what was checked and what was found, including "swept, none found" with the evidence examined. "No issues" with no receipts is auto-rejected.
 4. **Demonstrated, not asserted.** Each finding needs a concrete failing input, a traced code path, or a cited contradiction — plus a **concrete failure scenario** and a minimal fix. Verify-then-drop: suspicions that check out clean are not reported.
-5. **Scope of authority — and it differs by loop.** In the **implementation loop**, reviewers apply line-level fixes in place (never hand back a diff), and every applied fix cites the defect it repairs. In the **design loop**, the author owns every edit to the design doc and the reviewer only reports — a reviewer that edits the doc will be clobbered by the persistent author's next revision, and would then be "verifying dispositions" against text it wrote itself, breaking Fixer ≠ judge (§1). A **journey-results reviewer** (Stage 5) follows the implementation-loop rule — it reviews produced artifacts, so it fixes in place and cites the defect per fix — though Stage 5 is a stub and this assignment is provisional until a real cycle tests it. In every loop, reviewers do **not** unilaterally make architecture changes — those become design-level concerns for the maintainer — and never "fix" correct work they merely dislike.
-6. **Ledger obligations.** A requirement scorecard (R1..Rn: satisfied / partial / violated, with evidence); where the artifact under review has a Departures section, a verdict per Departure (uphold / reverse / amend); a "what this got right" list so later rounds don't regress the strengths; and the closing verdict from §2.
+5. **Scope of authority: fix in place, in both loops.** A pass applies its fixes directly (never hands back a diff): minimal diff, fix-only, a gate watched to fail per fix in code, a revision-log row per edit in a design, and every fix cites the defect it repairs. The author is not consulted; the next fresh pass judges the fixes first (§12). A pass does **not** change a ruling or make an architecture change on its own: it writes "needs a number" and the coordinator rules before the next brief. A pass never "fixes" correct work it merely dislikes. A **journey-results pass** (Stage 5) follows the same rule, though Stage 5 is a stub and this assignment is provisional until a real cycle tests it.
+6. **Ledger obligations.** A requirement scorecard (R1..Rn: satisfied / partial / violated, with evidence); where the artifact under review has a Departures section, a verdict per Departure (uphold / reverse / amend); a "what this got right" list so later passes don't regress the strengths; the trail entry committed with the fixes; and the verdict line from §2.
 
-**Reviewers verify by reading, not just by running gates.** Green build, lint and tests are necessary and nowhere near sufficient: the dominant defect classes — stated behavior contradicted by the code's own handling, invented facts, a gate that never exercised its subject — survive every mechanical check.
+**Passes verify by reading, not just by running gates.** Green build, lint and tests are necessary and nowhere near sufficient: the dominant defect classes — stated behavior contradicted by the code's own handling, invented facts, a gate that never exercised its subject — survive every mechanical check.
 
-**Reviewers argue back with evidence.** A reviewer that defers without checking the claim will break correct work. Disagreement backed by a cited source is a feature.
+**Passes argue back with evidence.** A pass that defers to the author's notes without checking the claim will break correct work. Disagreement backed by a cited source is a feature.
 
 ---
 
@@ -81,12 +81,12 @@ Every reviewer brief carries all six of these:
 
 ---
 
-## 5 · Persistent author, persistent reviewer
+## 5 · Fresh agents, a committed trail
 
-- **The author agent is continued, never respawned mid-loop.** Keep its agent id and continue it (via SendMessage, or the environment's equivalent) for every revision round — the accumulated context is the value. Retire it and start a fresh author when its cumulative usage reaches roughly 500k tokens: it finishes the round it is on, and every later round goes to a successor whose brief hands over the design doc, the round-stacked review file, and the current dispositions as ground truth. (Threshold set by maintainer ruling 2026-08-09, first applied to a live loop the same day; "the author is starting to lose earlier rounds" remains the early-warning signal at any count.)
-- **The reviewer is persistent across rounds within a loop.** One reviewer sees every round, so it can verify dispositions against the revised text rather than re-deriving the design each time. Rounds stack **newest-first** in a single review file next to the artifact under review.
-- **A fresh reviewer starts each new loop or phase.** The design loop's reviewer does not review the implementation; each implementation phase gets its own reviewer. Fresh eyes per unit of work; continuity within it.
-- **Keep reviewer contexts open after they finish**, so the coordinator can ask follow-up questions instead of re-litigating from scratch.
+- **Every pass is a fresh agent, and the committed trail is the memory.** No agent is reused across passes; nothing is handed over by conversation. A pass reads the author's brief and notes, the trail file (entries stacked **newest-first** next to the artifact) and the commits, and writes its own entry with the code it changed in the same commit. This replaced a persistent reviewer (kept open across rounds) after the trial in §12: a fresh agent found MAJORs inside the previous agent's own fixes in four of ten phases, which a continued context did not.
+- **An author is continued within its phase and retired at a bound.** Keep its id for the phase; retire it at roughly 500k tokens or 90 minutes of wall-clock without a delivery, whichever comes first: it writes RESUME STATE into its notes and a successor is briefed from the design, the trail and that state. Briefs split a design row that cannot fit one pass; a phase is never enlarged to avoid a handover.
+- **A message resumes an agent.** A delivered agent is never sent an acknowledgement or a receipt, only a question with a bounded answer, because a resumed agent keeps working in a checkout a successor may now own (observed: a delivered pass re-woken by three coordinator receipts kept editing the files its successor was editing).
+- **The registry.** Every agent's role, id, model and state are written into a git-ignored registry file at the repo root at spawn, before anything else, so a resumed coordinator reaches a running agent by id.
 
 ---
 
@@ -167,10 +167,30 @@ Rules for running several loops at once in one repository and for closing what t
 - **The fresh-checkout build is the last step of every phase closure.** Closure commits were staged from the author's list of touched files, and four times that list was incomplete (a route, a fixture, a seam, a wiring file), so HEAD did not compile for anyone who checked it out. So: before a closure is declared, check out HEAD into a fresh directory and build it. Read the author's touched-file list against the working tree's status; a hunk a neighbour left in a shared file is named in the closure message, never swept in silently.
 - **Reviewers replay injections from `cp` backups and rebuild after restoring.** A gate is believed only after it has been watched to fail (implementation-loop rule 3), and the reviewer, not the author, does the watching. So: the reviewer copies the file aside, pastes the defect in, runs the gate and records the red, restores from the copy, runs it again and records the green. The injection window is not confined to source: a neighbour's build can capture an injected expression in compiled output (`dist/`) between the paste and the restore, and a later run then tests the defect under a green name. Rebuild after restoring, and treat a gate that passes against the defect it names as a finding.
 - **Only the coordinator numbers decisions.** Authors running in parallel each assigned their own ids to rulings they needed, and the ids collided three times, so two different rulings share a number in the record. So: decision ids are assigned by the coordinator alone; an author that needs one asks and waits. A ruling is written into the decision record before the brief that cites it is sent.
+- **Version conflicts resolve on the version line alone.** A staging merge that took one side's whole manifest to settle a version conflict dropped the other side's dependencies and broke the build. So: the merged version is the next patch above both sides, edited on that line only; two sides that bumped to the same number are a conflict too, even when git merges them silently.
+- **A fix that protects the corpus is committed the moment it is made.** A coordinator's fix to a test that wrote into the read-only canonical snapshot lived only in the working tree under a running pass, so every other worktree kept the defect for a day. So: such a fix is its own commit on the trunk immediately, never left for a pass to carry.
 - **A dated, immutable scoring protocol before a measurement's first call.** A measurement whose rules are written after its results are seen measures the rule-writer. So: before the first call of any measurement (an agent campaign, a precision-and-recall sample, a benchmark), write the labels, the scoring rules and the counting method into a dated file, and never edit that file afterwards. A rule discovered post hoc goes into a new dated file beside the original, which states what it changes and why, so a reader can see which results were scored under which rules.
+
+---
+
+## 12 · The adversarial-pass chain
+
+The shape of every phase in both loops, adopted by maintainer ruling on 2026-09-06 after a trial across ten phases (numbers below). It replaced the author-plus-persistent-reviewer rounds that earlier versions of this playbook described.
+
+**The author.** Builds the phase from its brief: the deliverable, its named verification gate, and every injection the gate was watched to fail against (implementation-loop rule 3). Runs the whole suite once and every new suite once alone under a never-used namespace. Commits with named paths and writes its notes, including the injection record (red, restore, green, per injection) and a RESUME STATE section.
+
+**A pass.** A fresh agent, briefed that the work contains defects (§3). In order: (1) diffstat honesty: the delivery's diff touches what the notes claim and nothing unclaimed; (2) replay every injection the author recorded, from a `cp` backup, red pasted, `cmp` restore, green pasted, build output rebuilt after restoring; (3) hunt for gates that pass against the defect they name, with receipts per hunt; (4) open every cited `file:line` and callout; (5) fix what it finds in place: minimal diff, fix-only, a gate per fix watched to fail; (6) commit the code and its trail entry together; (7) end with the verdict line of §2 and the list of items carried to the next brief. The previous pass's own additions are the next pass's first target, because that is where the trial found the defects.
+
+**The stop rule and the cap.** A pass that changes nothing beyond line level and shows its receipts ends the phase. Two passes by default; the coordinator extends the chain by one when a pass finds a MAJOR inside the previous pass's own change, and records the extension. A hard cap would have shipped a migration closure check that passed three of five wrong migrations (found by the third pass, inside the second pass's fix). Leftovers carry to the next phase's brief, named.
+
+**Design loops** use the same chain with the design gate in place of the test suite: the interface-consumer exercise (the consumers compile against the sketches), citation opening, and the numbers rule (§6 of the implementation-loop skill), with a revision-log row per in-place edit. Docs-only phases get a pass too; it is cheap and it has caught a brief for the next phase that asked for a control the design forbids.
+
+**The coordinator's closure.** Its own checks (the diffstat against the named files; one injection replayed under its own namespace), a staging worktree with its own dependency install, a fresh build, both full suites, the version rule of §11, a fast-forward of the trunk, the registry and ledger rows, the next brief. Rulings a pass needs are written "needs a number" and numbered by the coordinator before the next brief.
+
+**The trial that decided it** (Postmortem, 2026-09-05 to 06; ledger in that project's `docs/drive/d119-trial-ledger.md`): seven phases under the old rounds against ten under the chain. Closed on the first review step: 2 of 7 against 5 of 10. Findings left unfixed after a review step: common under rounds (one round returned fourteen findings and the author changed nothing) against none under the chain. MAJORs found inside the previous step's own fixes: not measured under rounds; tenancy 3 of 6 in pass 3 and 1 of 3 in pass 4, infra 2 of 2 in pass 2 under the chain. Cost per review step: 170k to 250k tokens plus an author fix round of about 300k under rounds, against 150k to 350k with no fix round under the chain.
 
 ---
 
 ## Provenance
 
-This playbook is a generalization of the working methodology used to build the Postmortem chess-trainer project (a chess.com/Stockfish/FSRS training app), which itself ported the loop from an earlier flashcards project. The specific rules here — the two-loop sequencing, the interface-consumer exercise, the verdict vocabulary, and the six gate-honesty rules in the implementation-loop skill — each exist because a defect got through without them.
+This playbook is a generalization of the working methodology used to build the Postmortem chess-trainer project (a chess.com/Stockfish/FSRS training app), which itself ported the loop from an earlier flashcards project. The specific rules here — the two-loop sequencing, the interface-consumer exercise, the verdict line, the adversarial-pass chain, and the six gate-honesty rules in the implementation-loop skill — each exist because a defect got through without them.

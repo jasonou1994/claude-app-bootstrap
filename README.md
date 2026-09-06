@@ -17,8 +17,8 @@ The methodology has five stages. Each one ends when you approve its output.
 1. **Product discovery.** Claude asks what the product does, who uses it, and what happens when things go wrong, then writes the answers up as a requirements document. Technical concepts are explained from first principles until you can challenge them. When you challenge a technical choice, Claude converts the objection into a question it can measure instead of arguing the point.
    - **1b. User journeys.** A second Claude, kept away from the product's own documents, writes down at least eight kinds of person who might use it (you are one of them, and so is someone using a screen reader) and what each of them walks through: the first run, the daily loop, the day the product is wrong. Those walks are then held against the requirements (or, on a product that already exists, against what is built) and every step is marked served, awkward or missing. A third Claude reviews the result adversarially. You get one page, a map, with every number counted from the register, and you decide what it changes about the plan. The map never changes the plan by itself.
 2. **Wireframes.** Claude draws every screen of your app as a web page you can open in a browser, including the empty screens and the error screens. Each behavior the drawing does not make obvious gets a numbered note. Those notes are binding: later stages settle questions about the interface by reading this page.
-3. **Design review.** Claude writes a technical design. A second Claude reviews it adversarially, and the two exchange revisions until the reviewer's verdict is SHIP. Disagreements come to you as a written explanation with options and their costs. Implementation waits for your approval.
-4. **Implementation.** The build runs in phases. In each phase one Claude writes the code, a second Claude reviews it adversarially, and they iterate until the reviewer's verdict is SHIP. You see what shipped before the next phase starts.
+3. **Design review.** Claude writes a technical design. A chain of fresh Claudes then reviews it adversarially, each fixing what it finds in place, until one changes nothing. Disagreements come to you as a written explanation with options and their costs. Implementation waits for your approval.
+4. **Implementation.** The build runs in phases. In each phase one Claude writes the code, then a chain of fresh Claudes reviews it adversarially, each replaying the tests' injections and fixing what it finds, until one changes nothing. You see what shipped before the next phase starts.
 5. **End-to-end review.** Claude drives the running app through the journeys defined in stage 2. This stage is a stub, and the skill file marks it as unvalidated.
 
 Each stage ends with your approval before the next one begins. Requirements are signed off before design starts. The design is approved before implementation starts.
@@ -122,9 +122,9 @@ Do the following, in order:
    /app-bootstrap:e2e-review), says what each one produces for THIS project
    specifically, and states the gate rules plainly:
      - every stage ends with my explicit sign-off before the next one starts;
-     - the design loop must reach a plain SHIP verdict AND my approval before any
-       implementation begins;
-     - implementation runs one author-plus-adversarial-reviewer loop per phase.
+     - the design loop must close (a pass that changes nothing) AND get my approval
+       before any implementation begins;
+     - implementation runs one author plus a chain of fresh adversarial passes per phase.
    Also add pointers to wherever this project's requirements doc and wireframe
    artifact will live.
 
@@ -163,11 +163,11 @@ Stage 1 takes longer than the stages that follow it.
 | 1 | `/app-bootstrap:product-discovery` | Requirements doc: hard requirements `R1..Rn` split from the negotiable baseline, plus a dated product-decisions log | Maintainer signs off the requirements doc |
 | 1b | `/app-bootstrap:user-journeys` | Personas, journeys and a tagged gap register written blind behind a firewall (greenfield: held against the R-list; brownfield: against the feature surface), plus a self-contained journey map whose every number is counted from the register | Plain **SHIP** from the adversarial reviewer, then the maintainer reads the map and rules on the roadmap; the skill never changes the roadmap itself |
 | 2 | `/app-bootstrap:wireframes` | One published artifact covering every surface, with numbered callouts carrying binding semantics | Maintainer sign-off; artifact URL recorded in the project `CLAUDE.md` as the UI source of truth |
-| 3 | `/app-bootstrap:design-loop` | Design doc + full review trail | Plain **SHIP** from the adversarial reviewer, then a separate maintainer approval gate |
-| 4 | `/app-bootstrap:implementation-loop` | Shipped code, phase by phase | Plain **SHIP** per phase, plus the coordinator's independent spot-check |
+| 3 | `/app-bootstrap:design-loop` | Design doc + full review trail | A closing pass ("CODE CHANGED beyond line-level: no"), then a separate maintainer approval gate |
+| 4 | `/app-bootstrap:implementation-loop` | Shipped code, phase by phase | A closing pass per phase, plus the coordinator's closure checks |
 | 5 | `/app-bootstrap:e2e-review` | Browser-driven journey results | **STUB**. Shape defined, not yet validated |
 
-Shared doctrine for all six lives in [`docs/playbook.md`](docs/playbook.md): two-loop sequencing, the adversarial briefing template, persistent-author/reviewer continuation rules, the maintainer four-part walkthrough format, the SHIP / ONE MORE ROUND verdict vocabulary, delegation economics, and background-agent hygiene. Each skill points at it rather than restating it.
+Shared doctrine for all six lives in [`docs/playbook.md`](docs/playbook.md): two-loop sequencing, the adversarial briefing template, the adversarial-pass chain and its fresh-agent rule, the maintainer four-part walkthrough format, the verdict line, delegation economics, and background-agent hygiene. Each skill points at it rather than restating it.
 
 ## Repository layout
 
@@ -292,13 +292,13 @@ exits only on the maintainer's explicit sign-off.
 2. `/app-bootstrap:wireframes` → UI source of truth: <artifact URL>. Numbered
    callouts carry binding semantics.
 3. `/app-bootstrap:design-loop` → design doc in `docs/`. Implementation begins only
-   after a plain SHIP verdict AND maintainer approval.
-4. `/app-bootstrap:implementation-loop` → one author + adversarial-reviewer loop per
-   phase, each to a plain SHIP.
+   after the closing pass AND maintainer approval.
+4. `/app-bootstrap:implementation-loop` → one author plus a chain of fresh adversarial
+   passes per phase, each to a pass that changes nothing.
 5. `/app-bootstrap:e2e-review` → browser journey testing (stub).
 
-Doctrine: the plugin's `docs/playbook.md`. Verdict vocabulary is SHIP or ONE MORE
-ROUND, nothing else.
+Doctrine: the plugin's `docs/playbook.md`. The only verdict inside a loop is the
+line "CODE CHANGED beyond line-level: yes/no".
 ```
 
 ## History

@@ -1,6 +1,6 @@
 ---
 name: design-loop
-description: Use when a feature is large enough to need a design doc before any code gets written — Stage 3 of the app-bootstrap methodology, a persistent author and an adversarial reviewer running rounds, including the interface-consumer exercise, until a plain SHIP
+description: Use when a feature is large enough to need a design doc before any code gets written — Stage 3 of the app-bootstrap methodology, an author and a chain of fresh adversarial passes that fix the design in place, including the interface-consumer exercise, until a pass changes nothing
 argument-hint: "[topic, or path to an existing design doc]"
 ---
 
@@ -10,12 +10,12 @@ Run the full adversarial design-review workflow for: **$ARGUMENTS**
 
 If nothing was named above, ask the maintainer which design this loop is for before launching anything.
 
-Use it for any design large enough to deserve a design doc — especially one that ships interface sketches. **The loop does not exit until the adversarial reviewer's verdict is a plain SHIP.** The coordinator runs the loop under the maintainer's standing delegated authority (playbook §1): it rules the design decisions itself and drives to SHIP without per-decision approval. Implementation then begins only after **Touchpoint 1** — the maintainer reviews the batch of delegated decisions and approves the shipped design (playbook §1, §6).
+Use it for any design large enough to deserve a design doc — especially one that ships interface sketches. **The loop does not exit until a fresh adversarial pass changes nothing beyond line level and shows its receipts (playbook §12).** The coordinator runs the loop under the maintainer's standing delegated authority (playbook §1): it rules the design decisions itself and drives the chain to its close without per-decision approval. Implementation then begins only after **Touchpoint 1** — the maintainer reviews the batch of delegated decisions and approves the shipped design (playbook §1, §6).
 
 Shared doctrine — read it before launching anything: [`../../docs/playbook.md`](../../docs/playbook.md).
 
 **Entry gate:** signed-off requirements (Stage 1) and locked wireframes (Stage 2).
-**Exit gate:** a plain SHIP verdict, then Touchpoint 1 — the maintainer's batch decision review and approval to implement (playbook §1).
+**Exit gate:** a closing pass ("CODE CHANGED beyond line-level: no"), then Touchpoint 1 — the maintainer's batch decision review and approval to implement (playbook §1).
 
 ---
 
@@ -30,9 +30,9 @@ Getting this split wrong in the brief is a real failure mode: framing session co
 
 ---
 
-## Phase 1 — Author agent (background, keep open)
+## Phase 1 — Author agent (background, continued within the phase)
 
-Launch a general-purpose author agent in the background. Keep its agent id and continue it for every revision round — never spawn a fresh author mid-loop; the context is the value.
+Launch a general-purpose author agent in the background. Keep its agent id for the author's own phase (retire it at the playbook §5 bound with a RESUME STATE); the passes that follow are fresh agents and read the committed doc and trail, never the author's context.
 
 The brief must include:
 
@@ -45,15 +45,15 @@ The brief must include:
 
 ---
 
-## Phase 2 — Adversarial reviewer (background, keep open)
+## Phase 2 — Adversarial pass (background, fresh)
 
-Launch after the author reports, briefed per the playbook's adversarial briefing template: **assume the design contains defects; the job is to find them.** Same persistence rule — one reviewer, continued across all rounds, rounds stacked newest-first in a single review file next to the design doc.
+Launch after the author reports, briefed per the playbook's adversarial briefing template and §12: **assume the design contains defects; find them, and fix them in place.** The pass opens every cited `file:line`, re-derives every number, runs the consumer exercise below, edits the design directly (minimal edits, a revision-log row per edit), writes its entry newest-first in the review file next to the design doc, and ends with the verdict line of the playbook §2. A ruling it needs is written "needs a number" and the coordinator numbers it before the next brief.
 
-Findings discipline is non-negotiable; see the playbook §3. In addition, every round produces a requirement scorecard R1..Rn and a verdict per Departure (uphold / reverse / amend).
+Findings discipline is non-negotiable; see the playbook §3. In addition, every pass produces a requirement scorecard R1..Rn and a verdict per Departure (uphold / reverse / amend).
 
-### The interface-consumer exercise — mandatory, every round that touches interfaces
+### The interface-consumer exercise — mandatory, every pass that touches interfaces
 
-The reviewer must **write the consumers** — each feature's real usage and topology — as actual code against the doc's interface sketches, report the line counts, and report any path that cannot be expressed.
+The pass must **write the consumers** — each feature's real usage and topology — as actual code against the doc's interface sketches, keep them compiling (paste the exit code), and report any path that cannot be expressed.
 
 Rationale, learned the hard way: adversarial *reading* only exercises the paths the author drew. Attention goes where risk is believed to be, so failure paths get audited carefully while the happy path is "obviously fine". *Building* forces traversal of every path the program actually needs. In the loop this methodology comes from, the exercise caught a BLOCKER — a primary branch missing from an outcome type — that three full reading rounds had missed.
 
@@ -65,28 +65,28 @@ Under delegated authority (playbook §1) the coordinator rules contested finding
 
 The major decisions are the ones the maintainer reviews at Touchpoint 1, each presented as a **four-part walkthrough** (background for a low-context reader / concrete failure scenario / options with what each one GIVES UP / recommendation with reasoning). The walkthrough is the presentation format at the touchpoint, not a per-decision pre-approval gate. Mechanical decisions are recorded, not walked. Batch related decisions.
 
-Spot-check load-bearing findings yourself against the source before relaying them — reviewers can be wrong, and an unverified BLOCKER wastes a maintainer decision.
+Spot-check load-bearing findings yourself against the source before recording them — passes can be wrong, and an unverified BLOCKER wastes a maintainer decision.
 
 ---
 
-## Phase 4 — Revision rounds
+## Phase 4 — Further passes
 
-- Revisions are **in-place edits to the one design doc**, with a revision-log section extended per round. No addendum files, no v2 copies.
-- The revision brief carries: rulings (binding, verbatim), every finding with its required disposition, and discretion boundaries — which fix shapes are the author's call, each requiring a one-paragraph justification.
-- The reviewer's next round verifies dispositions **against the revised text, not the author's claims**, attacks the **new** surfaces the revision introduced (new content is where new defects live), and adjudicates any coordinator-made judgment calls on the merits.
-- The final round is narrow by instruction: verify fixes, re-run the consumer exercise, no padding, and close with a plain verdict — **SHIP or ONE MORE ROUND**. No other verdict vocabulary exists; "SHIP with reservations" is ONE MORE ROUND.
+- Every edit is an **in-place edit to the one design doc**, with a revision-log row per edit. No addendum files, no v2 copies.
+- A second pass runs only if the first changed the design beyond line level. Its brief names the previous pass's additions as its first target: new content is where new defects live. It re-runs the consumer exercise, opens the citations again, and re-derives the numbers.
+- Two passes by default; the coordinator extends the chain when a pass finds a MAJOR inside the previous pass's own change (the tenancy design in the source project needed four; a hard cap would have shipped a broken closure check).
+- The closing pass writes "CODE CHANGED beyond line-level: no" over its receipts; nothing else closes the loop.
 
-Consider one dedicated round — after the technical rounds converge — that reviews the design against the *product*: walk the wireframes surface by surface and ask whether the design can render each one. Technical rounds systematically miss coverage gaps because they audit what is written, not what is absent.
+Consider one dedicated pass — after the technical passes converge — that reviews the design against the *product*: walk the wireframes surface by surface and ask whether the design can render each one. Technical passes systematically miss coverage gaps because they audit what is written, not what is absent.
 
 ---
 
 ## Exit
 
-On SHIP:
+On the closing pass:
 
-1. Independently spot-check the design doc yourself before presenting it.
+1. Independently spot-check the design doc yourself before presenting it (open two citations, re-derive one number, compile the consumers).
 2. Deliver the doc plus the full review trail to the maintainer.
 3. List any deferred one-line edits with the phase that will absorb them.
 4. Ask — never assume — about promoting the doc into the project docs tree, indexing it from `CLAUDE.md`, and archiving the review trail.
 
-**SHIP ends the design loop only.** The implementation loop starts only after Touchpoint 1: the maintainer reviews the batch of delegated design decisions and approves the shipped design (playbook §1).
+**The closing pass ends the design loop only.** The implementation loop starts only after Touchpoint 1: the maintainer reviews the batch of delegated design decisions and approves the shipped design (playbook §1).

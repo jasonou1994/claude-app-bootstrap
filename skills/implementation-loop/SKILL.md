@@ -1,17 +1,17 @@
 ---
 name: implementation-loop
-description: Use when an approved design is ready to build, or the user asks to start implementing a phase — Stage 4 of the app-bootstrap methodology, phased implementation with one author-plus-adversarial-reviewer loop per phase under the six gate-honesty rules
+description: Use when an approved design is ready to build, or the user asks to start implementing a phase — Stage 4 of the app-bootstrap methodology, phased implementation where each phase is an author followed by a chain of fresh adversarial passes that fix in place, under the six gate-honesty rules
 argument-hint: "[path to the approved design doc, or the phase to run]"
 ---
 
 # Stage 4 — The implementation loop
 
-Implement an approved design, **one phase at a time**, each phase its own author → adversarial reviewer loop that runs until a plain SHIP.
+Implement an approved design, **one phase at a time**, each phase its own author → adversarial-pass chain (playbook §12) that runs until a pass changes nothing beyond line level.
 
 Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
 
-**Entry gate:** Touchpoint 1 is cleared — the design has SHIPped *and* the maintainer has reviewed the delegated design decisions and approved implementation (playbook §1). Not one or the other. Once entered, the loop runs autonomously under delegated authority through every phase to a plain SHIP; the next standing maintainer review is Touchpoint 2, after the whole implementation loop SHIPs.
-**Exit gate per phase:** a plain SHIP from that phase's adversarial reviewer, plus the coordinator's own independent spot-check.
+**Entry gate:** Touchpoint 1 is cleared — the design has SHIPped *and* the maintainer has reviewed the delegated design decisions and approved implementation (playbook §1). Not one or the other. Once entered, the loop runs autonomously under delegated authority through every phase; the next standing maintainer review is Touchpoint 2, after the whole implementation loop closes.
+**Exit gate per phase:** a pass whose verdict line is "CODE CHANGED beyond line-level: no" with its receipts, plus the coordinator's own closure checks.
 
 ---
 
@@ -19,12 +19,12 @@ Shared doctrine: [`../../docs/playbook.md`](../../docs/playbook.md).
 
 The approved design carries a phased build plan with a **named verification gate per phase**. Run them in order. For each phase:
 
-1. **Author agent** (background, kept open across the phase's rounds) implements the phase against the design doc, writing files directly.
-2. **A fresh adversarial reviewer** for this phase — briefed per the playbook §3 — hunts for defects and applies line-level fixes in place, citing the defect each fix repairs.
-3. **Revision rounds** until the verdict is a plain SHIP. Each round verifies dispositions against the revised code, not the author's claims, and attacks the new surfaces the revision introduced.
-4. **The coordinator spot-checks independently**, then integrates and moves to the next phase.
+1. **Author agent** (background, continued within the phase, retired at the playbook §5 bound) implements the phase against the design doc with its named gate and every injection watched to fail, commits with named paths, and writes notes with the injection record and a RESUME STATE.
+2. **A fresh adversarial pass** — briefed per the playbook §3 and §12 — replays every injection from a `cp` backup, hunts for gates that pass against the defect they name, opens every cited `file:line`, fixes what it finds in place (minimal diff, fix-only, a gate per fix), and commits the code with its trail entry. It ends with the verdict line of the playbook §2.
+3. **Another fresh pass** only if the previous one changed code beyond line level; the previous pass's own additions are its first target. Two passes by default; the coordinator extends the chain when a pass finds a MAJOR inside the previous pass's own change. Leftovers carry to the next phase's brief.
+4. **The coordinator closes the phase** (below), then moves to the next.
 
-A fresh reviewer per phase; a persistent author within a phase. Fixer ≠ judge.
+Every pass is a fresh agent; the committed trail is the memory. Fixer ≠ judge, one step removed: a pass fixes, the next pass judges its fixes first.
 
 ---
 
@@ -65,9 +65,9 @@ Concrete, checkable criteria. The agent must not finish until it has re-read its
 
 **Self-certified "all PASS" is necessary but not sufficient.** Checklist items have blind spots — an item can pass for a reason unrelated to what it meant to check. Phrase items to close those gaps, and read the actual output yourself before declaring anything done.
 
-### 5. Reviewers are adversarial, never validators
+### 5. Passes are adversarial, never validators
 
-Briefed with the premise that the work contains defects, given an enumerated list of defect classes to sweep, and required to return **per-defect-class receipts** — what was checked, what was found, including "swept, none found" with the evidence examined. "No issues" with no receipts is auto-rejected. See the playbook §3 for the full template.
+Briefed with the premise that the work contains defects, given an enumerated list of defect classes to sweep, and required to return **per-defect-class receipts** — what was checked, what was found, including "swept, none found" with the evidence examined. "No issues" with no receipts is auto-rejected. See the playbook §3 for the full template. A pass that finds nothing writes "CODE CHANGED beyond line-level: no" over those receipts, and that closes the phase; a pass that fixes anything beyond a line hands the phase to the next fresh pass.
 
 Note what this catches that mechanical gates cannot: stated behavior contradicted by the code's own handling, invented facts, and **inversions** — a signal that fires on exactly the wrong cases, a count that counts the wrong noun, a direction word computed off an empty baseline. Every inversion of that kind in the source project rendered through a path some gate had already certified, and every one was found by reading code against its own prose and then *executing* it.
 
@@ -90,15 +90,15 @@ Author brief:
 - project conventions, by pointer to the project's `CLAUDE.md` — never restated;
 - the enumerated verification checklist (rule 4).
 
-Reviewer brief: the playbook §3 template, plus the phase's design section, plus rules 1–3 and 6 as explicit defect classes to sweep — *"find a gate that would pass against the defect it claims to catch"* is one of the highest-yield instructions in the list.
+Pass brief: the playbook §3 template and the §12 order of work, plus the phase's design section, the author's notes and injection record, the trail file, plus rules 1–3 and 6 as explicit defect classes to sweep — *"find a gate that would pass against the defect it claims to catch"* is one of the highest-yield instructions in the list. A second pass's brief names the first pass's additions as its first target. Every brief ends with the enumerated completion checklist (rule 4) and the verdict line.
 
 ---
 
 ## Closing a phase
 
-1. SHIP verdict from the reviewer.
-2. Coordinator's independent spot-check of the actual code and the actual gate output.
+1. A pass that changed nothing beyond line level, with its receipts, and every carried item named.
+2. The coordinator's own checks: the delivery's diffstat touches the files the findings named; one injection replayed under the coordinator's own test namespace; a staging worktree with its own dependency install, a fresh build and both full suites; the version resolved on the version line alone (playbook §11); a fast-forward of the trunk.
 3. Design doc updated in the same change if the phase altered any subsystem's behavior. Stale docs mislead every future agent.
 4. Record the phase outcome for the eventual Touchpoint 2 review: what shipped, what the gates now prove, every measured-vs-estimated discrepancy, and any deferred item with the phase that will absorb it. This is a non-blocking record, not a per-phase approval gate — under delegated authority (playbook §1) the coordinator does not wait for the maintainer between phases.
 
-Then, once steps 1-3 hold, start the next phase. The maintainer reviews the accumulated phase records at Touchpoint 2, after the implementation loop's final phase SHIPs.
+Then, once steps 1-3 hold, write the ledger and registry rows and start the next phase. The maintainer reviews the accumulated phase records at Touchpoint 2, after the implementation loop's final phase closes.
